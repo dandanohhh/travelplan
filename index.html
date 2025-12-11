@@ -47,16 +47,11 @@
 </head>
 <body class="safe-top h-screen flex flex-col">
 
-    <!-- 安全載入畫面 (含緊急重置) -->
     <div id="loading">
         <i class="fa-solid fa-plane fa-bounce text-3xl mb-3"></i>
         <div class="text-xs font-bold tracking-widest uppercase mb-4">Tokyo Trip</div>
-        <div class="text-[10px] text-[#84A98C]">正在嘗試修復資料...</div>
-        
-        <!-- 這就是救命按鈕 -->
-        <button onclick="emergencyReset()" class="emergency-btn">
-            <i class="fa-solid fa-triangle-exclamation mr-1"></i> 若卡住請點此重置
-        </button>
+        <div class="text-[10px] text-[#84A98C]">V20 日期版</div>
+        <button onclick="emergencyReset()" class="emergency-btn"><i class="fa-solid fa-triangle-exclamation mr-1"></i> 若卡住請點此重置</button>
     </div>
 
     <div id="app" class="h-full hidden">
@@ -76,18 +71,26 @@
 
         <!-- 1. 行程表 -->
         <div v-if="currentTab === 'schedule'" class="px-5 pb-10">
+            <!-- 天數切換 -->
             <div class="flex items-center justify-between mb-4">
                 <div class="flex overflow-x-auto hide-scrollbar gap-2 w-3/4">
                     <button v-for="(day, index) in itinerary" :key="index" @click="changeDay(index)"
-                        class="px-4 py-2 rounded-lg whitespace-nowrap text-xs font-medium tracking-wide transition-all border"
+                        class="px-4 py-2 rounded-lg whitespace-nowrap text-xs font-medium tracking-wide transition-all border flex flex-col items-center justify-center h-12"
                         :class="currentDayIndex === index ? 'bg-[#2F3E46] text-white border-[#2F3E46]' : 'bg-white text-[#84A98C] border-[#CAD2C5]'">
-                        Day {{ index + 1 }}
+                        <span>Day {{ index + 1 }}</span>
+                        <!-- 日期顯示 (小字) -->
+                        <span v-if="startDate" class="text-[9px] font-light opacity-80 leading-none mt-0.5">{{ getDayDate(index) }}</span>
                     </button>
-                    <button @click="addDay" class="px-3 py-2 rounded-lg bg-[#E8ECE9] text-[#52796F] text-xs"><i class="fa-solid fa-plus"></i></button>
+                    <button @click="addDay" class="px-3 py-2 rounded-lg bg-[#E8ECE9] text-[#52796F] text-xs h-12"><i class="fa-solid fa-plus"></i></button>
                 </div>
-                <a :href="getDailyRouteLink()" target="_blank" class="flex flex-col items-center justify-center text-[#52796F] text-[10px] font-bold bg-white border border-[#52796F] w-12 h-9 rounded-lg shadow-sm">
+                <a :href="getDailyRouteLink()" target="_blank" class="flex flex-col items-center justify-center text-[#52796F] text-[10px] font-bold bg-white border border-[#52796F] w-12 h-12 rounded-lg shadow-sm">
                     <i class="fa-solid fa-map text-sm"></i> 全日
                 </a>
+            </div>
+
+            <!-- 當前日期顯示 -->
+            <div v-if="startDate" class="text-center text-xs text-[#52796F] font-bold mb-4 tracking-wider border-b border-[#E8ECE9] pb-2">
+                {{ getFullDayDate(currentDayIndex) }}
             </div>
 
             <div class="space-y-0" id="sortable-list">
@@ -160,7 +163,7 @@
             </div>
         </div>
 
-        <!-- 2. 清單 -->
+        <!-- 2. 清單 (List) -->
         <div v-if="currentTab === 'list'" class="px-5 pt-2 animate-fade">
             <div class="flex p-1 bg-white rounded-xl border border-[#E8ECE9] mb-4">
                 <button @click="listType = 'buy'" :class="listType === 'buy' ? 'bg-[#2F3E46] text-white shadow-md' : 'text-[#84A98C]'" class="flex-1 py-2 rounded-lg text-xs font-bold transition-all"><i class="fa-solid fa-bag-shopping mr-1"></i> 購物</button>
@@ -366,21 +369,23 @@
                 <button @click="showSettings = false" class="absolute top-4 right-4 text-[#CAD2C5]"><i class="fa-solid fa-times text-xl"></i></button>
                 <h3 class="text-xl font-bold text-[#2F3E46] mb-4">設定</h3>
                 
+                <div class="mb-4">
+                    <label class="text-xs font-bold text-[#52796F] block mb-1">第一天日期</label>
+                    <input type="date" v-model="startDate" class="w-full bg-[#F4F7F5] p-2 rounded-lg text-[#2F3E46] font-bold">
+                </div>
+
                 <div class="bg-[#F4F7F5] p-4 rounded-xl mb-4">
-                    <h4 class="text-sm font-bold text-[#52796F] mb-2"><i class="fa-solid fa-floppy-disk mr-1"></i> 手動備份</h4>
-                    <p class="text-[10px] text-[#84A98C] mb-3">若擔心資料遺失，請建立備份。</p>
+                    <h4 class="text-sm font-bold text-[#52796F] mb-2"><i class="fa-solid fa-floppy-disk mr-1"></i> 資料管理</h4>
                     <button @click="saveManualBackup" class="w-full bg-[#52796F] text-white py-2 rounded-lg text-xs font-bold mb-2 active:scale-95 transition">💾 建立目前備份</button>
                     <button @click="loadManualBackup" class="w-full bg-white border border-[#52796F] text-[#52796F] py-2 rounded-lg text-xs font-bold active:scale-95 transition">📂 讀取備份</button>
                 </div>
 
-                <div class="bg-[#F4F7F5] p-4 rounded-xl mb-6">
-                    <h4 class="text-sm font-bold text-[#52796F] mb-2"><i class="fa-solid fa-share-nodes mr-1"></i> 資料轉移 (無匯率紀錄)</h4>
-                    <button @click="exportData" class="w-full bg-[#2F3E46] text-white py-3 rounded-lg text-xs font-bold mb-2"><i class="fa-solid fa-copy mr-1"></i> 複製資料代碼</button>
-                    <div class="flex gap-2">
-                        <input v-model="importString" placeholder="貼上代碼..." class="flex-1 bg-white px-3 py-2 rounded-lg text-xs text-[#2F3E46] border border-[#E8ECE9]">
-                        <button @click="importData" class="bg-[#52796F] text-white px-3 py-2 rounded-lg text-xs font-bold whitespace-nowrap">讀取</button>
-                    </div>
+                <div class="bg-white border border-[#D66853] p-4 rounded-xl mb-4">
+                    <h4 class="text-sm font-bold text-[#D66853] mb-2"><i class="fa-solid fa-truck-medical mr-1"></i> 資料救援</h4>
+                    <p class="text-[10px] text-[#84A98C] mb-2">如果打開是空白，請點此嘗試抓取舊版資料。</p>
+                    <button @click="recoverOldData" class="w-full bg-[#D66853] text-white py-2 rounded-lg text-xs font-bold active:scale-95 transition">📂 嘗試從舊版救援資料</button>
                 </div>
+
                 <button @click="resetData" class="w-full text-[#D66853] text-xs py-3 border border-[#D66853] rounded-lg hover:bg-[#D66853] hover:text-white transition">清除所有資料</button>
             </div>
         </div>
@@ -417,12 +422,29 @@
                 
                 const currentDayIndex = ref(0);
                 const itinerary = ref([{ events: [{ id: Date.now(), time: '10:00', location: '成田機場', transport: 'train', note: '領取 JR Pass', image: null }], accommodation: { name: '', note: '', image: null } }]);
+                const startDate = ref('');
                 let sortableInstance = null;
 
                 const addDay = () => itinerary.value.push({ events: [], accommodation: { name: '', note: '', image: null } });
                 const addEvent = () => itinerary.value[currentDayIndex.value].events.push({ id: Date.now(), time: '12:00', location: '', transport: 'walk', note: '', image: null });
                 const removeEvent = (idx) => itinerary.value[currentDayIndex.value].events.splice(idx, 1);
                 
+                // 日期計算 helper
+                const getDayDate = (dayIndex) => {
+                    if (!startDate.value) return '';
+                    const date = new Date(startDate.value);
+                    date.setDate(date.getDate() + dayIndex);
+                    return `${date.getMonth() + 1}/${date.getDate()}`;
+                };
+                
+                const getFullDayDate = (dayIndex) => {
+                     if (!startDate.value) return '';
+                     const date = new Date(startDate.value);
+                     date.setDate(date.getDate() + dayIndex);
+                     const weekDays = ['日', '一', '二', '三', '四', '五', '六'];
+                     return `${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()} (${weekDays[date.getDay()]})`;
+                };
+
                 const initSortable = () => {
                     const el = document.getElementById('sortable-list');
                     if (el) {
@@ -575,7 +597,7 @@
                     return Math.round(paid - (totalExpense.value / travelers.value.length));
                 };
 
-                // Storage & Migration Logic
+                // Storage Logic V20 (Manual Load)
                 onMounted(() => {
                     setTimeout(() => {
                         const loader = document.getElementById('loading');
@@ -583,33 +605,16 @@
                         const app = document.getElementById('app');
                         if(app) app.classList.remove('hidden');
                         nextTick(() => initSortable());
-                    }, 500); // 0.5s Force Open
+                    }, 500);
 
-                    // Try load data with error handling
+                    // Try load current V20 data
                     try {
-                        const keyCurrent = 'tokyoTripV17';
+                        const keyCurrent = 'tokyoTripV20';
                         const savedData = localStorage.getItem(keyCurrent);
-                        
                         if (savedData) {
                             loadData(JSON.parse(savedData));
-                        } else {
-                            // Check backups
-                            const manual = localStorage.getItem('tokyoTrip_ManualBackup');
-                            if(manual) {
-                                loadData(JSON.parse(manual));
-                            } else {
-                                // Try legacy keys
-                                const legacyKeys = ['tokyoTripV16', 'tokyoTripV15', 'tokyoTripV14', 'tokyoTripV13'];
-                                for (const key of legacyKeys) {
-                                    const old = localStorage.getItem(key);
-                                    if (old) { loadData(JSON.parse(old)); break; }
-                                }
-                            }
                         }
-                    } catch (e) {
-                        console.error("Data load error", e);
-                        // If error happens here, the force timeout above will still open the app
-                    }
+                    } catch(e) { console.error(e); }
                 });
 
                 const loadData = (data) => {
@@ -622,6 +627,7 @@
                     lastUpdated.value = data.lastUpdated || '';
                     currencyHistory.value = data.currencyHistory || [];
                     savedMapUrl.value = data.savedMapUrl || '';
+                    startDate.value = data.startDate || '';
                 };
 
                 const saveManualBackup = () => {
@@ -629,7 +635,8 @@
                         itinerary: itinerary.value, wishlist: wishlist.value,
                         rate: rate.value, expenses: expenses.value, 
                         travelerInput: travelerInput.value, lastUpdated: lastUpdated.value,
-                        currencyHistory: currencyHistory.value, savedMapUrl: savedMapUrl.value
+                        currencyHistory: currencyHistory.value, savedMapUrl: savedMapUrl.value,
+                        startDate: startDate.value
                     };
                     try {
                         localStorage.setItem('tokyoTrip_ManualBackup', JSON.stringify(data));
@@ -639,66 +646,53 @@
 
                 const loadManualBackup = () => {
                     const backup = localStorage.getItem('tokyoTrip_ManualBackup');
-                    if(backup) {
-                        if(confirm('確定要還原到上次手動備份的狀態嗎？')) {
-                            loadData(JSON.parse(backup));
-                            alert('還原成功！');
-                            nextTick(() => initSortable());
-                        }
-                    } else {
-                        alert('找不到備份檔案');
-                    }
+                    if(backup && confirm('確定要還原備份？')) {
+                        loadData(JSON.parse(backup));
+                        alert('還原成功！');
+                        nextTick(() => initSortable());
+                    } else if(!backup) { alert('找不到備份'); }
                 };
 
-                watch([itinerary, wishlist, rate, expenses, travelerInput, lastUpdated, currencyHistory, savedMapUrl], () => {
+                const recoverOldData = () => {
+                    // Try to find ANY old data (Up to V19)
+                    const legacyKeys = ['tokyoTripV19', 'tokyoTripV17', 'tokyoTripV16', 'tokyoTripV15', 'tokyoTripV14', 'tokyoTripV13'];
+                    let found = false;
+                    for (const key of legacyKeys) {
+                        const old = localStorage.getItem(key);
+                        if (old) { 
+                            if(confirm(`發現舊版資料 (${key})，要載入嗎？`)) {
+                                loadData(JSON.parse(old));
+                                found = true;
+                                break; 
+                            }
+                        }
+                    }
+                    if(!found) alert('未發現可用的舊版資料');
+                };
+
+                watch([itinerary, wishlist, rate, expenses, travelerInput, lastUpdated, currencyHistory, savedMapUrl, startDate], () => {
                     try {
-                        localStorage.setItem('tokyoTripV17', JSON.stringify({
+                        localStorage.setItem('tokyoTripV20', JSON.stringify({
                             itinerary: itinerary.value, wishlist: wishlist.value,
                             rate: rate.value, expenses: expenses.value, 
                             travelerInput: travelerInput.value, lastUpdated: lastUpdated.value,
-                            currencyHistory: currencyHistory.value, savedMapUrl: savedMapUrl.value
+                            currencyHistory: currencyHistory.value, savedMapUrl: savedMapUrl.value,
+                            startDate: startDate.value
                         }));
                     } catch (e) { console.log('Storage full'); }
                 }, { deep: true });
 
-                const resetData = () => { if(confirm('警告：刪除所有資料！')) { localStorage.removeItem('tokyoTripV17'); location.reload(); } }
-
-                const exportData = () => {
-                    const data = JSON.stringify({
-                        itinerary: itinerary.value, wishlist: wishlist.value,
-                        rate: rate.value, expenses: expenses.value, 
-                        travelerInput: travelerInput.value, savedMapUrl: savedMapUrl.value
-                    });
-                    const encoded = btoa(unescape(encodeURIComponent(data)));
-                    navigator.clipboard.writeText(encoded).then(() => alert('代碼已複製！')).catch(() => alert('複製失敗'));
-                };
-
-                const importData = () => {
-                    if(!importString.value) return;
-                    try {
-                        const decoded = decodeURIComponent(escape(atob(importString.value)));
-                        const data = JSON.parse(decoded);
-                        if(confirm('確定覆蓋資料？')) {
-                            itinerary.value = data.itinerary || itinerary.value;
-                            wishlist.value = data.wishlist || [];
-                            expenses.value = data.expenses || [];
-                            travelerInput.value = data.travelerInput || '我, 旅伴';
-                            savedMapUrl.value = data.savedMapUrl || '';
-                            alert('成功！'); showSettings.value = false; importString.value = '';
-                            nextTick(() => initSortable());
-                        }
-                    } catch (e) { alert('代碼錯誤'); }
-                };
+                const resetData = () => { if(confirm('警告：刪除所有資料！')) { localStorage.removeItem('tokyoTripV20'); location.reload(); } }
 
                 return {
-                    currentTab, showSettings, importString, viewingImage,
+                    currentTab, showSettings, viewingImage,
                     currentDayIndex, itinerary, addDay, addEvent, removeEvent, changeDay,
                     getMapLink, getDailyRouteLink, getRouteLink,
                     listType, currentList, filteredList, newItem, addItem, deleteItem, toggleCheck, handleImageUpload, viewImage, deleteViewingImage, getNearbyLink,
                     showUncheckedOnly, savedMapUrl, tempMapUrl, isEditingMap, saveMapUrl,
                     rate, jpyAmount, fetchRate, isLoadingRate, lastUpdated, historyNote, currencyHistory, addHistory, deleteHistory,
                     travelerInput, travelers, expenses, newExpense, addExpense, totalExpense, getBalance, updateTravelers, 
-                    resetData, exportData, importData, saveManualBackup, loadManualBackup
+                    resetData, saveManualBackup, loadManualBackup, recoverOldData, startDate, getDayDate, getFullDayDate
                 };
             }
         });
