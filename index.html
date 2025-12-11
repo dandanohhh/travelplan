@@ -4,61 +4,308 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Tokyo Green</title>
     
+    <!-- 改用更穩定的 CDN 來源 -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.3.4/vue.global.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
-        /* --- 質感綠配色系統 --- */
         :root {
-            --bg-color: #F4F7F5;      /* 極淡的灰綠米色背景 */
-            --card-bg: #FFFFFF;       /* 純白卡片 */
-            --primary: #2F3E46;       /* 深墨綠 (文字/標題) */
-            --accent: #52796F;        /* 鼠尾草綠 (按鈕/重點) */
-            --soft-green: #CAD2C5;    /* 淺綠 (邊框/未選取) */
-            --highlight: #84A98C;     /* 明亮的綠 (裝飾) */
+            --bg-color: #F4F7F5;
+            --primary: #2F3E46;
+            --accent: #52796F;
         }
-
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+            font-family: -apple-system, sans-serif;
             background-color: var(--bg-color);
             color: var(--primary);
             padding-bottom: 90px;
             -webkit-tap-highlight-color: transparent;
         }
         .safe-top { padding-top: env(safe-area-inset-top); }
-        
-        /* 質感卡片：無陰影，圓潤，細緻邊框 */
         .green-card {
-            background-color: var(--card-bg);
-            border: 1px solid rgba(82, 121, 111, 0.15); /* 極淡的綠色邊框 */
-            box-shadow: 0 4px 20px rgba(47, 62, 70, 0.03);
+            background-color: white;
+            border: 1px solid rgba(82, 121, 111, 0.15);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03);
         }
-        
-        .hide-scrollbar::-webkit-scrollbar { display: none; }
-        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        
-        /* 底部導航：毛玻璃感 */
         .glass-nav {
             background: rgba(244, 247, 245, 0.95);
             border-top: 1px solid rgba(82, 121, 111, 0.1);
             backdrop-filter: blur(10px);
             padding-bottom: env(safe-area-inset-bottom);
         }
-
         input, select { outline: none; background: transparent; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
         
-        /* 自定義動畫 */
-        .fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease; }
-        .fade-enter-from, .fade-leave-to { opacity: 0; }
+        /* 載入畫面樣式 */
+        #loading {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; justify-content: center; items-center;
+            background: #F4F7F5; z-index: 9999;
+            color: #52796F; font-weight: bold;
+        }
     </style>
 </head>
 <body class="safe-top h-screen flex flex-col">
 
-    <div id="app" class="h-full">
+    <!-- 預載入提示 (如果 Vue 沒跑起來，你會看到這個) -->
+    <div id="loading">
+        <div class="text-center">
+            <i class="fa-solid fa-circle-notch fa-spin text-3xl mb-3"></i><br>
+            APP 啟動中...
+        </div>
+    </div>
+
+    <div id="app" class="h-full hidden"> <!-- 先隱藏，等 Vue 好了再顯示 -->
 
         <!-- Header -->
-        <header class="px-6
+        <header class="px-6 py-6 flex justify-between items-end bg-[#F4F7F5] sticky top-0 z-20">
+            <div>
+                <h1 class="text-2xl font-serif font-bold tracking-wide text-[#2F3E46]">
+                    TOKYO<span class="text-[#52796F]">.</span>
+                </h1>
+                <p class="text-[10px] text-[#84A98C] tracking-[0.2em] uppercase mt-1">Travel Companion</p>
+            </div>
+            <button @click="resetData" class="text-[10px] text-[#CAD2C5] border border-[#CAD2C5] px-2 py-1 rounded hover:text-[#52796F] transition">RESET</button>
+        </header>
+
+        <!-- 1. 行程表 -->
+        <div v-if="currentTab === 'schedule'" class="px-5">
+            <div class="flex overflow-x-auto hide-scrollbar gap-2 mb-6 pb-2">
+                <button v-for="(day, index) in itinerary" :key="index" @click="currentDayIndex = index"
+                    class="px-5 py-2 rounded-lg whitespace-nowrap text-xs font-medium tracking-wide transition-all border"
+                    :class="currentDayIndex === index ? 'bg-[#2F3E46] text-white border-[#2F3E46]' : 'bg-white text-[#84A98C] border-[#CAD2C5]'">
+                    Day {{ index + 1 }}
+                </button>
+                <button @click="addDay" class="px-4 py-2 rounded-lg bg-[#E8ECE9] text-[#52796F] text-xs"><i class="fa-solid fa-plus"></i></button>
+            </div>
+
+            <div class="space-y-4">
+                <div v-for="(event, idx) in itinerary[currentDayIndex].events" :key="idx" class="green-card p-5 rounded-2xl relative">
+                    <button @click="removeEvent(idx)" class="absolute top-3 right-3 text-[#CAD2C5] p-2"><i class="fa-solid fa-minus"></i></button>
+                    <div class="flex gap-4 items-start">
+                        <div class="flex flex-col items-center pt-2">
+                            <div class="w-2 h-2 rounded-full bg-[#52796F]"></div>
+                            <div class="w-px h-12 bg-gradient-to-b from-[#52796F] to-transparent my-1"></div>
+                        </div>
+                        <div class="flex-1">
+                            <input type="time" v-model="event.time" class="text-xs font-bold text-[#84A98C] mb-1">
+                            <input type="text" v-model="event.location" placeholder="輸入地點" class="w-full text-lg font-bold text-[#2F3E46] mb-1">
+                            <input type="text" v-model="event.note" placeholder="備註..." class="w-full text-sm text-[#52796F] mb-3 opacity-80">
+                            <a :href="getMapLink(event.location)" target="_blank" class="inline-flex items-center text-[10px] font-bold text-white bg-[#52796F] px-3 py-1.5 rounded-full shadow-md">
+                                <i class="fa-solid fa-location-dot mr-1.5"></i> Google Maps
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <button @click="addEvent" class="w-full py-4 rounded-xl border border-dashed border-[#84A98C] text-[#84A98C] text-sm">+ 新增行程</button>
+            </div>
+        </div>
+
+        <!-- 2. 匯率 -->
+        <div v-if="currentTab === 'currency'" class="px-5 pt-2">
+            <div class="green-card p-6 rounded-3xl mb-6 text-center bg-gradient-to-br from-[#FFFFFF] to-[#F4F7F5]">
+                <div class="text-[10px] tracking-widest text-[#84A98C] uppercase mb-1">Exchange Rate</div>
+                <div class="flex justify-center items-end gap-2 mb-6 border-b border-[#E8ECE9] pb-4 mx-4">
+                    <span class="text-sm text-[#52796F]">¥1 =</span>
+                    <input type="number" step="0.001" v-model="rate" class="w-16 text-center text-xl font-bold text-[#2F3E46]">
+                    <span class="text-sm text-[#52796F]">NTD</span>
+                </div>
+                <div class="flex items-center justify-between gap-4">
+                    <div class="w-1/2 text-left">
+                        <label class="text-[10px] text-[#CAD2C5] block ml-1">JPY</label>
+                        <input type="number" v-model="jpyAmount" class="w-full text-3xl font-bold text-[#2F3E46]" placeholder="0">
+                    </div>
+                    <div class="text-[#CAD2C5]"><i class="fa-solid fa-arrow-right-long"></i></div>
+                    <div class="w-1/2 text-right">
+                        <label class="text-[10px] text-[#CAD2C5] block mr-1">TWD</label>
+                        <div class="text-3xl font-bold text-[#52796F]">${{ Math.round(jpyAmount * rate).toLocaleString() }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <h3 class="text-sm font-bold text-[#2F3E46] mb-3 ml-1">推薦刷卡</h3>
+            <div class="space-y-3">
+                <div v-for="card in sortedCards" :key="card.name" class="green-card px-5 py-4 rounded-xl flex justify-between items-center" :class="{'border-[#52796F] bg-[#F4F9F7]': card === sortedCards[0]}">
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-md" :class="card.color">{{ card.name[0] }}</div>
+                        <div>
+                            <div class="text-sm font-bold text-[#2F3E46]">{{ card.name }}</div>
+                            <div class="text-[10px] text-[#52796F] bg-[#E8ECE9] inline-block px-1.5 rounded mt-0.5">回饋 {{ card.reward }}%</div>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-[10px] text-[#CAD2C5]">預估台幣</div>
+                        <div class="text-base font-bold text-[#2F3E46]">{{ calculateCost(card).toLocaleString() }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <details class="mt-8">
+                <summary class="list-none text-center text-[10px] text-[#84A98C] cursor-pointer border-t border-[#E8ECE9] pt-4 uppercase">編輯卡片 <i class="fa-solid fa-chevron-down"></i></summary>
+                <div class="mt-4 space-y-2">
+                    <div v-for="(card, i) in creditCards" :key="i" class="flex gap-2">
+                        <input v-model="card.name" class="flex-1 p-2 bg-white rounded border border-[#E8ECE9] text-xs" placeholder="卡名">
+                        <input v-model="card.reward" type="number" step="0.1" class="w-16 p-2 bg-white rounded border border-[#E8ECE9] text-xs" placeholder="%">
+                        <select v-model="card.color" class="w-20 p-2 bg-white rounded border border-[#E8ECE9] text-xs">
+                            <option value="bg-[#2F3E46]">深綠</option><option value="bg-[#52796F]">鼠尾草</option>
+                            <option value="bg-[#84A98C]">淺綠</option><option value="bg-gray-400">灰</option>
+                        </select>
+                    </div>
+                </div>
+            </details>
+        </div>
+
+        <!-- 3. 分帳 -->
+        <div v-if="currentTab === 'split'" class="px-5 pt-2">
+            <div class="bg-[#2F3E46] text-white p-6 rounded-2xl mb-6 shadow-xl relative overflow-hidden">
+                <div class="absolute -top-10 -right-10 w-32 h-32 bg-[#52796F] rounded-full opacity-20 blur-2xl"></div>
+                <h3 class="text-[10px] text-[#84A98C] tracking-widest uppercase mb-1">每人應付 Average</h3>
+                <div class="text-3xl font-light mb-6">¥ {{ Math.round(totalExpense / travelers.length || 0).toLocaleString() }}</div>
+                <div class="space-y-3 relative z-10">
+                    <div v-for="person in travelers" :key="person" class="flex justify-between text-sm border-b border-[#52796F]/30 pb-2 last:border-0">
+                        <span class="font-light text-[#CAD2C5]">{{ person }}</span>
+                        <span :class="getBalance(person) > 0 ? 'text-[#84A98C]' : 'text-[#D66853]'">{{ getBalance(person) > 0 ? '收' : '付' }} {{ Math.abs(getBalance(person)).toLocaleString() }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="green-card p-4 rounded-2xl mb-6">
+                <div class="flex gap-2 mb-2">
+                    <select v-model="newExpense.payer" class="bg-[#F4F7F5] px-3 py-3 rounded-lg text-sm font-bold text-[#2F3E46] w-1/3">
+                        <option disabled value="">誰付?</option><option v-for="p in travelers" :value="p">{{ p }}</option>
+                    </select>
+                    <input type="number" v-model="newExpense.amount" placeholder="金額 (¥)" class="bg-[#F4F7F5] px-3 py-3 rounded-lg text-sm font-bold text-[#2F3E46] w-2/3">
+                </div>
+                <div class="flex gap-2">
+                    <input type="text" v-model="newExpense.desc" placeholder="項目" class="bg-[#F4F7F5] px-3 py-3 rounded-lg text-sm w-full">
+                    <button @click="addExpense" class="bg-[#52796F] text-white px-5 rounded-lg"><i class="fa-solid fa-plus"></i></button>
+                </div>
+            </div>
+
+            <h3 class="text-sm font-bold text-[#2F3E46] mb-3 ml-1">支出紀錄</h3>
+            <div class="space-y-2 pb-24">
+                <div v-for="(exp, i) in expenses" :key="i" class="bg-white border border-transparent hover:border-[#CAD2C5] px-5 py-3 rounded-xl flex justify-between items-center">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-[#F4F7F5] flex items-center justify-center text-[#84A98C] text-xs"><i class="fa-solid fa-receipt"></i></div>
+                        <div><div class="text-sm font-bold text-[#2F3E46]">{{ exp.desc }}</div><div class="text-[10px] text-[#52796F]">{{ exp.payer }} 先付</div></div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span class="text-sm font-bold text-[#2F3E46]">¥ {{ parseInt(exp.amount).toLocaleString() }}</span>
+                        <button @click="expenses.splice(i, 1)" class="text-[#CAD2C5] hover:text-[#D66853] text-xs px-2"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mb-4 px-2">
+                 <div class="text-[10px] text-[#84A98C] uppercase mb-1">Travelers</div>
+                 <input v-model="travelerInput" @blur="updateTravelers" class="w-full bg-transparent border-b border-[#CAD2C5] py-1 text-sm text-[#2F3E46]" placeholder="我, 朋友A">
+            </div>
+        </div>
+
+        <!-- 底部導航 -->
+        <nav class="fixed bottom-0 w-full glass-nav flex justify-around items-center pt-3 z-50">
+            <button @click="currentTab = 'schedule'" class="flex flex-col items-center gap-1 w-1/3 p-2">
+                <i class="fa-solid fa-map text-lg" :class="currentTab === 'schedule' ? 'text-[#2F3E46]' : 'text-[#CAD2C5]'"></i>
+                <span class="text-[9px] font-bold uppercase" :class="currentTab === 'schedule' ? 'text-[#2F3E46]' : 'text-[#CAD2C5]'">Plan</span>
+            </button>
+            <button @click="currentTab = 'currency'" class="flex flex-col items-center gap-1 w-1/3 p-2">
+                <i class="fa-solid fa-sack-dollar text-lg" :class="currentTab === 'currency' ? 'text-[#2F3E46]' : 'text-[#CAD2C5]'"></i>
+                <span class="text-[9px] font-bold uppercase" :class="currentTab === 'currency' ? 'text-[#2F3E46]' : 'text-[#CAD2C5]'">Rate</span>
+            </button>
+            <button @click="currentTab = 'split'" class="flex flex-col items-center gap-1 w-1/3 p-2">
+                <i class="fa-solid fa-file-invoice text-lg" :class="currentTab === 'split' ? 'text-[#2F3E46]' : 'text-[#CAD2C5]'"></i>
+                <span class="text-[9px] font-bold uppercase" :class="currentTab === 'split' ? 'text-[#2F3E46]' : 'text-[#CAD2C5]'">Split</span>
+            </button>
+        </nav>
+
+    </div>
+
+    <script>
+        const { createApp, ref, computed, watch, onMounted } = Vue;
+
+        const app = createApp({
+            setup() {
+                const currentTab = ref('schedule');
+                
+                // Schedule
+                const currentDayIndex = ref(0);
+                const itinerary = ref([{ events: [{ time: '10:00', location: '成田機場', note: '領取 JR Pass' }] }]);
+                const addDay = () => itinerary.value.push({ events: [] });
+                const addEvent = () => itinerary.value[currentDayIndex.value].events.push({ time: '12:00', location: '', note: '' });
+                const removeEvent = (idx) => itinerary.value[currentDayIndex.value].events.splice(idx, 1);
+                const getMapLink = (loc) => loc ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(loc)}` : '#';
+
+                // Currency
+                const rate = ref(0.215); 
+                const jpyAmount = ref('');
+                const creditCards = ref([
+                    { name: '吉鶴卡', reward: 3.0, color: 'bg-[#2F3E46]' },
+                    { name: 'FlyGo', reward: 3.0, color: 'bg-[#52796F]' },
+                    { name: '現金', reward: 0, color: 'bg-gray-400' }
+                ]);
+                const sortedCards = computed(() => [...creditCards.value].sort((a, b) => b.reward - a.reward));
+                const calculateCost = (card) => {
+                    if (!jpyAmount.value) return 0;
+                    const twd = jpyAmount.value * rate.value;
+                    return Math.round(twd - (twd * (card.reward / 100)));
+                };
+
+                // Split
+                const travelerInput = ref('我, 旅伴');
+                const travelers = computed(() => travelerInput.value.split(/[,，]/).map(t => t.trim()).filter(t => t));
+                const expenses = ref([]);
+                const newExpense = ref({ payer: '', amount: '', desc: '' });
+                const updateTravelers = () => {};
+                const addExpense = () => {
+                    if (!newExpense.value.payer || !newExpense.value.amount) return alert('請輸入資訊');
+                    expenses.value.unshift({ ...newExpense.value });
+                    newExpense.value.amount = ''; newExpense.value.desc = '';
+                };
+                const totalExpense = computed(() => expenses.value.reduce((sum, item) => sum + Number(item.amount), 0));
+                const getBalance = (person) => {
+                    const paid = expenses.value.filter(e => e.payer === person).reduce((sum, e) => sum + Number(e.amount), 0);
+                    return Math.round(paid - (totalExpense.value / travelers.value.length));
+                };
+
+                // Storage
+                onMounted(() => {
+                    const savedData = localStorage.getItem('tokyoTripGreen');
+                    if (savedData) {
+                        const data = JSON.parse(savedData);
+                        itinerary.value = data.itinerary || itinerary.value;
+                        rate.value = data.rate || 0.215;
+                        creditCards.value = data.creditCards || creditCards.value;
+                        expenses.value = data.expenses || [];
+                        travelerInput.value = data.travelerInput || '我, 旅伴';
+                    }
+                    // 移除 Loading，顯示 App
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('app').classList.remove('hidden');
+                });
+
+                watch([itinerary, rate, creditCards, expenses, travelerInput], () => {
+                    localStorage.setItem('tokyoTripGreen', JSON.stringify({
+                        itinerary: itinerary.value, rate: rate.value, creditCards: creditCards.value,
+                        expenses: expenses.value, travelerInput: travelerInput.value
+                    }));
+                }, { deep: true });
+
+                const resetData = () => {
+                    if(confirm('重置資料?')) { localStorage.removeItem('tokyoTripGreen'); location.reload(); }
+                }
+
+                return {
+                    currentTab, currentDayIndex, itinerary, addDay, addEvent, removeEvent, getMapLink,
+                    rate, jpyAmount, creditCards, sortedCards, calculateCost,
+                    travelerInput, travelers, expenses, newExpense, addExpense, totalExpense, getBalance, updateTravelers, resetData
+                };
+            }
+        });
+
+        app.mount('#app');
+    </script>
+</body>
+</html>
