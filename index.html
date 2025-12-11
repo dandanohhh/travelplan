@@ -532,6 +532,82 @@
                 };
             }
         }).mount('#app');
-    </script>
+    <script>
+const app = Vue.createApp({
+    data() {
+        return {
+            currentTab: 'schedule',
+            currentDayIndex: 0,
+            showSettings: false,
+            viewingImage: null,
+            startDate: "",
+            itinerary: [
+                { events: [], accommodation: { name: "", note: "", image: "" } }
+            ],
+            listType: 'buy',
+            showUncheckedOnly: false,
+            savedMapUrl: "",
+            isEditingMap: false,
+            tempMapUrl: "",
+            newItem: { id: Date.now(), name: "", note: "", image: "", category: "", checked: false },
+            rate: 0.23,
+            isLoadingRate: false,
+            lastUpdated: "",
+            jpyAmount: "",
+            historyNote: "",
+            currencyHistory: [],
+            travelers: ["我"],
+            travelerInput: "我",
+            newExpense: { payer: "", amount: "", desc: "" },
+            expenses: []
+        };
+    },
+
+    methods: {
+        changeDay(i) { this.currentDayIndex = i; },
+        addDay() {
+            this.itinerary.push({ events: [], accommodation: { name: "", note: "", image: "" } });
+        },
+        addEvent() {
+            this.itinerary[this.currentDayIndex].events.push({
+                id: Date.now(),
+                time: "",
+                transport: "walk",
+                location: "",
+                note: "",
+                image: ""
+            });
+        },
+        removeEvent(i) {
+            this.itinerary[this.currentDayIndex].events.splice(i, 1);
+        },
+        getMapLink(name) {
+            return "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(name);
+        },
+        handleImageUpload(e, target) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = () => { target.image = reader.result; };
+            reader.readAsDataURL(file);
+        },
+        viewImage(img) { this.viewingImage = img; },
+        deleteViewingImage() { this.viewingImage = null; },
+    },
+
+    mounted() {
+        // 讓 panic-btn 消失
+        document.getElementById('panic-btn').style.display = "none";
+
+        // iOS SortableJS 初始化（如需要）
+        new Sortable(document.getElementById("sortable-list"), {
+            handle: ".drag-handle",
+            animation: 150
+        });
+    }
+});
+
+app.mount('#app');
+</script>
 </body>
 </html>
