@@ -38,7 +38,7 @@
             transition: all 0.2s;
         }
         
-        /* 完成項目的樣式 (綠底白字) */
+        /* 完成項目的樣式 */
         .completed-card {
             background-color: #52796F !important;
             color: white !important;
@@ -60,14 +60,14 @@
         .file-input { position: absolute; width: 100%; height: 100%; opacity: 0; cursor: pointer; z-index: 10; left: 0; top: 0;}
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(47, 62, 70, 0.85); z-index: 100; display: flex; justify-content: center; items-center; padding: 20px; backdrop-filter: blur(5px); }
         
-        /* 左滑刪除特效 (Snap Scroll) */
+        /* 左滑刪除特效 */
         .swipe-item {
             display: flex;
             overflow-x: auto;
             scroll-snap-type: x mandatory;
-            scrollbar-width: none; /* Firefox */
+            scrollbar-width: none; 
         }
-        .swipe-item::-webkit-scrollbar { display: none; } /* Chrome/Safari */
+        .swipe-item::-webkit-scrollbar { display: none; } 
         .swipe-content {
             min-width: 100%;
             scroll-snap-align: start;
@@ -221,25 +221,18 @@
                 <div v-for="(item, idx) in currentList" :key="idx" 
                     class="green-card p-0 rounded-2xl relative transition-all overflow-hidden" 
                     :class="{'completed-card': item.checked}">
-                    
                     <div class="swipe-item">
                         <div class="swipe-content p-4 w-full flex gap-4 items-center">
-                            <!-- 勾選按鈕 -->
                             <button @click="item.checked = !item.checked" class="text-lg shrink-0 transition-colors check-btn" :class="item.checked ? 'text-white' : 'text-[#84A98C]'">
                                 <i :class="item.checked ? 'fa-solid fa-square-check' : 'fa-regular fa-square'"></i>
                             </button>
-
-                            <!-- 圖片 -->
                             <div class="relative w-16 h-16 bg-[#F4F7F5] rounded-xl shrink-0 overflow-hidden border border-[#E8ECE9]">
                                 <img v-if="item.image" :src="item.image" class="w-full h-full object-cover" @click="viewImage(item.image)">
                                 <div v-else class="w-full h-full flex items-center justify-center text-[#CAD2C5]"><i class="fa-solid fa-image"></i></div>
                             </div>
-
-                            <!-- 內容 -->
                             <div class="flex-1 py-1 min-w-0">
                                 <h3 class="font-bold text-base leading-tight mb-1 truncate" :class="item.checked ? 'text-white' : 'text-[#2F3E46]'">{{ item.name }}</h3>
                                 <p class="text-xs mb-2 truncate text-secondary" :class="item.checked ? 'text-white/80' : 'text-[#84A98C]'">{{ item.note }}</p>
-                                
                                 <div class="flex gap-2">
                                     <a v-if="listType === 'eat'" :href="getNearbyLink(item.name)" target="_blank" class="text-[10px] font-bold px-2 py-1 rounded shadow-sm transition-colors"
                                        :class="item.checked ? 'bg-white text-[#52796F]' : 'bg-[#52796F] text-white hover:bg-[#2F3E46]'">
@@ -251,15 +244,11 @@
                                     </a>
                                 </div>
                             </div>
-                            
-                            <!-- 提示左滑 (僅裝飾) -->
-                             <div class="text-[#CAD2C5] text-[10px] absolute right-2 top-1/2 -translate-y-1/2 opacity-30 pointer-events-none" v-if="!item.checked">
+                            <div class="text-[#CAD2C5] text-[10px] absolute right-2 top-1/2 -translate-y-1/2 opacity-30 pointer-events-none" v-if="!item.checked">
                                 <i class="fa-solid fa-chevron-left"></i>
                             </div>
                         </div>
-
-                        <!-- 左滑露出的刪除按鈕 -->
-                        <div class="swipe-action bg-[#D66853] flex items-center justify-center" @click="deleteItem(idx)">
+                        <div class="swipe-action bg-[#D66853] flex items-center justify-center cursor-pointer" @click="deleteItem(idx)">
                             <i class="fa-solid fa-trash text-white text-lg"></i>
                         </div>
                     </div>
@@ -267,7 +256,7 @@
             </div>
         </div>
 
-        <!-- 3. 匯率歷史紀錄版 (History Currency) -->
+        <!-- 3. 匯率 (Currency) - 歷史紀錄版 -->
         <div v-if="currentTab === 'currency'" class="px-5 pt-10">
             <div class="green-card p-6 rounded-3xl mb-6 text-center bg-white shadow-xl shadow-[#52796F]/10">
                 <div class="text-[10px] tracking-widest text-[#84A98C] uppercase mb-1">Exchange Rate</div>
@@ -295,7 +284,6 @@
                         </div>
                     </div>
                     
-                    <!-- 記錄按鈕區 -->
                     <div class="flex gap-2 items-center">
                         <input type="text" v-model="historyNote" placeholder="備註 (如: Dyson...)" class="flex-1 bg-white border border-[#E8ECE9] rounded-lg px-3 py-2 text-sm text-[#2F3E46]">
                         <button @click="addHistory" class="bg-[#52796F] text-white w-10 h-10 rounded-lg flex items-center justify-center shadow-md active:scale-95 transition">
@@ -305,7 +293,6 @@
                 </div>
             </div>
 
-            <!-- 歷史紀錄列表 -->
             <h3 class="text-xs font-bold text-[#84A98C] mb-3 ml-1 uppercase tracking-wide">比價紀錄 (左滑刪除)</h3>
             <div class="space-y-2 pb-10">
                 <div v-for="(rec, i) in currencyHistory" :key="rec.id" class="green-card p-0 rounded-xl overflow-hidden">
@@ -324,9 +311,6 @@
                             <i class="fa-solid fa-trash text-white"></i>
                         </div>
                     </div>
-                </div>
-                <div v-if="currencyHistory.length === 0" class="text-center text-[#CAD2C5] text-xs py-4">
-                    還沒有紀錄，輸入金額後按 + 號儲存
                 </div>
             </div>
         </div>
@@ -393,19 +377,13 @@
             </button>
         </nav>
 
-        <!-- 設定 Modal -->
+        <!-- 設定 Modal (僅保留重置) -->
         <div v-if="showSettings" class="modal-overlay" @click.self="showSettings = false">
             <div class="bg-white w-full max-w-sm rounded-2xl p-6 shadow-2xl relative animate-fade">
                 <button @click="showSettings = false" class="absolute top-4 right-4 text-[#CAD2C5]"><i class="fa-solid fa-times text-xl"></i></button>
-                <h3 class="text-xl font-bold text-[#2F3E46] mb-4">設定</h3>
-                
-                <div class="bg-[#F4F7F5] p-4 rounded-xl mb-6">
-                    <h4 class="text-sm font-bold text-[#52796F] mb-2"><i class="fa-solid fa-share-nodes mr-1"></i> 資料轉移</h4>
-                    <button @click="exportData" class="w-full bg-[#2F3E46] text-white py-3 rounded-lg text-xs font-bold mb-2"><i class="fa-solid fa-copy mr-1"></i> 複製資料代碼</button>
-                    <div class="flex gap-2">
-                        <input v-model="importString" placeholder="貼上代碼..." class="flex-1 bg-white px-3 py-2 rounded-lg text-xs text-[#2F3E46] border border-[#E8ECE9]">
-                        <button @click="importData" class="bg-[#52796F] text-white px-3 py-2 rounded-lg text-xs font-bold whitespace-nowrap">讀取</button>
-                    </div>
+                <h3 class="text-xl font-bold text-[#2F3E46] mb-4">資料管理</h3>
+                <div class="bg-[#F4F7F5] p-4 rounded-xl mb-6 text-xs text-[#84A98C]">
+                    所有資料皆儲存於此手機。
                 </div>
                 <button @click="resetData" class="w-full text-[#D66853] text-xs py-3 border border-[#D66853] rounded-lg hover:bg-[#D66853] hover:text-white transition">清除所有資料</button>
             </div>
@@ -429,7 +407,6 @@
             setup() {
                 const currentTab = ref('schedule');
                 const showSettings = ref(false);
-                const importString = ref('');
                 const viewingImage = ref(null);
                 
                 // 1. Schedule
@@ -527,7 +504,7 @@
                 };
                 const getNearbyLink = (name) => `https://www.google.com/maps/search/${encodeURIComponent(name + ' near me')}`;
 
-                // 3. Currency (History Mode)
+                // 3. Currency (History Mode) - New API
                 const rate = ref(0.215); 
                 const jpyAmount = ref('');
                 const isLoadingRate = ref(false);
@@ -538,9 +515,10 @@
                 const fetchRate = async () => {
                     isLoadingRate.value = true;
                     try {
-                        const res = await fetch('https://api.frankfurter.app/latest?from=JPY&to=TWD');
+                        const res = await fetch('https://open.er-api.com/v6/latest/JPY');
                         const data = await res.json();
-                        rate.value = (data.rates.TWD * 1.02).toFixed(3);
+                        const rawRate = data.rates.TWD;
+                        rate.value = (rawRate * 1.02).toFixed(3);
                         lastUpdated.value = new Date().toLocaleTimeString('zh-TW', {hour: '2-digit', minute:'2-digit'});
                     } catch (e) { alert('更新失敗，請檢查網路'); } finally { isLoadingRate.value = false; }
                 };
@@ -578,7 +556,7 @@
 
                 // Storage
                 onMounted(() => {
-                    const savedData = localStorage.getItem('tokyoTripV11');
+                    const savedData = localStorage.getItem('tokyoTripV12');
                     if (savedData) {
                         try {
                             const data = JSON.parse(savedData);
@@ -598,7 +576,7 @@
 
                 watch([itinerary, wishlist, rate, expenses, travelerInput, lastUpdated, currencyHistory], () => {
                     try {
-                        localStorage.setItem('tokyoTripV11', JSON.stringify({
+                        localStorage.setItem('tokyoTripV12', JSON.stringify({
                             itinerary: itinerary.value, wishlist: wishlist.value,
                             rate: rate.value, expenses: expenses.value, 
                             travelerInput: travelerInput.value, lastUpdated: lastUpdated.value,
@@ -607,43 +585,16 @@
                     } catch (e) { alert('儲存空間已滿，請刪除部分照片'); }
                 }, { deep: true });
 
-                const resetData = () => { if(confirm('警告：刪除所有資料！')) { localStorage.removeItem('tokyoTripV11'); location.reload(); } }
-
-                const exportData = () => {
-                    const data = JSON.stringify({
-                        itinerary: itinerary.value, wishlist: wishlist.value,
-                        rate: rate.value, expenses: expenses.value, 
-                        travelerInput: travelerInput.value
-                    });
-                    const encoded = btoa(unescape(encodeURIComponent(data)));
-                    navigator.clipboard.writeText(encoded).then(() => alert('代碼已複製！')).catch(() => alert('複製失敗'));
-                };
-
-                const importData = () => {
-                    if(!importString.value) return;
-                    try {
-                        const decoded = decodeURIComponent(escape(atob(importString.value)));
-                        const data = JSON.parse(decoded);
-                        if(confirm('確定覆蓋資料？')) {
-                            itinerary.value = data.itinerary || itinerary.value;
-                            wishlist.value = data.wishlist || [];
-                            rate.value = data.rate || 0.215;
-                            expenses.value = data.expenses || [];
-                            travelerInput.value = data.travelerInput || '我, 旅伴';
-                            alert('成功！'); showSettings.value = false; importString.value = '';
-                            nextTick(() => initSortable());
-                        }
-                    } catch (e) { alert('代碼錯誤'); }
-                };
+                const resetData = () => { if(confirm('警告：刪除所有資料！')) { localStorage.removeItem('tokyoTripV12'); location.reload(); } }
 
                 return {
-                    currentTab, showSettings, importString, viewingImage,
+                    currentTab, showSettings, viewingImage,
                     currentDayIndex, itinerary, addDay, addEvent, removeEvent, changeDay,
                     getMapLink, getDailyRouteLink, getRouteLink,
                     listType, currentList, newItem, addItem, deleteItem, handleImageUpload, viewImage, deleteViewingImage, getNearbyLink,
                     rate, jpyAmount, fetchRate, isLoadingRate, lastUpdated, historyNote, currencyHistory, addHistory, deleteHistory,
                     travelerInput, travelers, expenses, newExpense, addExpense, totalExpense, getBalance, updateTravelers, 
-                    resetData, exportData, importData
+                    resetData
                 };
             }
         });
