@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Tokyo Green</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* --- 質感綠配色系統 --- */
+        :root {
+            --bg-color: #F4F7F5;      /* 極淡的灰綠米色背景 */
+            --card-bg: #FFFFFF;       /* 純白卡片 */
+            --primary: #2F3E46;       /* 深墨綠 (文字/標題) */
+            --accent: #52796F;        /* 鼠尾草綠 (按鈕/重點) */
+            --soft-green: #CAD2C5;    /* 淺綠 (邊框/未選取) */
+            --highlight: #84A98C;     /* 明亮的綠 (裝飾) */
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+            background-color: var(--bg-color);
+            color: var(--primary);
+            padding-bottom: 90px;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .safe-top { padding-top: env(safe-area-inset-top); }
+        
+        /* 質感卡片：無陰影，圓潤，細緻邊框 */
+        .green-card {
+            background-color: var(--card-bg);
+            border: 1px solid rgba(82, 121, 111, 0.15); /* 極淡的綠色邊框 */
+            box-shadow: 0 4px 20px rgba(47, 62, 70, 0.03);
+        }
+        
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* 底部導航：毛玻璃感 */
+        .glass-nav {
+            background: rgba(244, 247, 245, 0.95);
+            border-top: 1px solid rgba(82, 121, 111, 0.1);
+            backdrop-filter: blur(10px);
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+
+        input, select { outline: none; background: transparent; }
+        
+        /* 自定義動畫 */
+        .fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease; }
+        .fade-enter-from, .fade-leave-to { opacity: 0; }
+    </style>
+</head>
+<body class="safe-top h-screen flex flex-col">
+
+    <div id="app" class="h-full">
+
+        <!-- Header -->
+        <header class="px-6
