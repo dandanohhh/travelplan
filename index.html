@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Tokyo Green Trip</title>
+    <title>Tokyo Green Trip V13</title>
     
     <!-- CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -30,7 +30,6 @@
         }
         .safe-top { padding-top: env(safe-area-inset-top); }
         
-        /* 核心卡片 */
         .green-card {
             background-color: white;
             border: 1px solid rgba(82, 121, 111, 0.15);
@@ -38,7 +37,7 @@
             transition: all 0.2s;
         }
         
-        /* 完成項目的樣式 */
+        /* 購物清單完成樣式 */
         .completed-card {
             background-color: #52796F !important;
             color: white !important;
@@ -47,6 +46,8 @@
         .completed-card input { color: white !important; }
         .completed-card .text-secondary { color: rgba(255,255,255,0.8) !important; }
         .completed-card .check-btn { color: white !important; }
+        
+        .gmap-card { background: white; border: 1px solid #E8ECE9; border-left: 4px solid #4285F4; }
 
         .glass-nav {
             background: rgba(244, 247, 245, 0.96);
@@ -60,28 +61,12 @@
         .file-input { position: absolute; width: 100%; height: 100%; opacity: 0; cursor: pointer; z-index: 10; left: 0; top: 0;}
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(47, 62, 70, 0.85); z-index: 100; display: flex; justify-content: center; items-center; padding: 20px; backdrop-filter: blur(5px); }
         
-        /* 左滑刪除特效 */
-        .swipe-item {
-            display: flex;
-            overflow-x: auto;
-            scroll-snap-type: x mandatory;
-            scrollbar-width: none; 
-        }
+        .swipe-item { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; }
         .swipe-item::-webkit-scrollbar { display: none; } 
-        .swipe-content {
-            min-width: 100%;
-            scroll-snap-align: start;
-        }
-        .swipe-action {
-            min-width: 80px;
-            scroll-snap-align: end;
-        }
+        .swipe-content { min-width: 100%; scroll-snap-align: start; }
+        .swipe-action { min-width: 80px; scroll-snap-align: end; }
 
-        .route-connector {
-            position: relative; margin-left: 28px; padding-left: 20px;
-            border-left: 2px dashed #CAD2C5; padding-top: 12px; padding-bottom: 12px;
-        }
-
+        .route-connector { position: relative; margin-left: 28px; padding-left: 20px; border-left: 2px dashed #CAD2C5; padding-top: 12px; padding-bottom: 12px; }
         #loading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: flex; justify-content: center; items-center; background: #F4F7F5; z-index: 9999; color: #52796F; }
         .spin { animation: spin 1s linear infinite; }
         @keyframes spin { 100% { transform: rotate(360deg); } }
@@ -91,8 +76,8 @@
 
     <div id="loading">
         <div class="text-center">
-            <i class="fa-solid fa-plane-up fa-bounce text-3xl mb-3"></i><br>
-            旅程準備中...
+            <i class="fa-solid fa-cloud-arrow-down fa-bounce text-3xl mb-3"></i><br>
+            資料繼承中...
         </div>
     </div>
 
@@ -199,11 +184,35 @@
 
         <!-- 2. 清單 (List) -->
         <div v-if="currentTab === 'list'" class="px-5 pt-2 animate-fade">
+            <!-- 分類切換 -->
             <div class="flex p-1 bg-white rounded-xl border border-[#E8ECE9] mb-4">
                 <button @click="listType = 'buy'" :class="listType === 'buy' ? 'bg-[#2F3E46] text-white shadow-md' : 'text-[#84A98C]'" class="flex-1 py-2 rounded-lg text-xs font-bold transition-all"><i class="fa-solid fa-bag-shopping mr-1"></i> 購物</button>
                 <button @click="listType = 'eat'" :class="listType === 'eat' ? 'bg-[#52796F] text-white shadow-md' : 'text-[#84A98C]'" class="flex-1 py-2 rounded-lg text-xs font-bold transition-all"><i class="fa-solid fa-utensils mr-1"></i> 美食</button>
             </div>
 
+            <!-- Google Map List (美食限定) -->
+            <div v-if="listType === 'eat'" class="mb-4 animate-fade">
+                <div class="gmap-card p-4 rounded-2xl shadow-sm">
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center gap-2"><i class="fa-solid fa-map-location-dot text-[#4285F4]"></i><h3 class="text-sm font-bold text-[#2F3E46]">Google List 傳送門</h3></div>
+                        <button v-if="savedMapUrl" @click="isEditingMap = !isEditingMap" class="text-[10px] text-[#CAD2C5] underline">編輯</button>
+                    </div>
+                    <div v-if="!savedMapUrl || isEditingMap">
+                        <div class="flex gap-2"><input v-model="tempMapUrl" placeholder="貼上 Google List 連結..." class="flex-1 bg-[#F4F7F5] px-3 py-2 rounded-lg text-xs text-[#2F3E46]"><button @click="saveMapUrl" class="bg-[#4285F4] text-white px-3 py-2 rounded-lg text-xs font-bold">儲存</button></div>
+                    </div>
+                    <a v-if="savedMapUrl && !isEditingMap" :href="savedMapUrl" target="_blank" class="block w-full bg-[#F4F7F5] hover:bg-[#E8ECE9] text-[#4285F4] font-bold text-center py-3 rounded-xl text-sm transition mt-1"><i class="fa-solid fa-arrow-up-right-from-square mr-1"></i> 開啟已存的清單</a>
+                </div>
+            </div>
+
+            <!-- 篩選器 (購物限定) -->
+            <div v-if="listType === 'buy'" class="flex justify-end mb-2">
+                <button @click="showUncheckedOnly = !showUncheckedOnly" class="text-xs font-bold flex items-center gap-1" :class="showUncheckedOnly ? 'text-[#52796F]' : 'text-[#CAD2C5]'">
+                    <i :class="showUncheckedOnly ? 'fa-solid fa-filter' : 'fa-solid fa-filter-circle-xmark'"></i>
+                    只看未買
+                </button>
+            </div>
+
+            <!-- 新增輸入區 -->
             <div class="green-card p-4 rounded-2xl mb-6 flex gap-3 items-center">
                 <div class="relative w-12 h-12 rounded-xl bg-[#F4F7F5] border border-dashed border-[#84A98C] flex items-center justify-center text-[#84A98C] overflow-hidden">
                     <img v-if="newItem.image" :src="newItem.image" class="w-full h-full object-cover opacity-80">
@@ -211,19 +220,23 @@
                     <input type="file" accept="image/*" class="file-input" @change="handleImageUpload($event, newItem)">
                 </div>
                 <div class="flex-1">
-                    <input v-model="newItem.name" placeholder="新增項目..." class="w-full text-sm font-bold text-[#2F3E46] mb-1">
-                    <input v-model="newItem.note" placeholder="備註" class="w-full text-xs text-[#52796F]">
+                    <div class="flex gap-2 mb-1">
+                        <input v-model="newItem.name" placeholder="名稱 (如: 一蘭)" class="flex-1 text-sm font-bold text-[#2F3E46]">
+                        <input v-if="listType === 'eat'" v-model="newItem.category" placeholder="標籤 (拉麵)" class="w-16 bg-[#F4F7F5] text-xs px-1 rounded text-center">
+                    </div>
+                    <input v-model="newItem.note" placeholder="備註..." class="w-full text-xs text-[#52796F]">
                 </div>
                 <button @click="addItem" class="w-10 h-10 rounded-full bg-[#2F3E46] text-white shadow-lg flex items-center justify-center shrink-0"><i class="fa-solid fa-plus"></i></button>
             </div>
 
+            <!-- 列表 -->
             <div class="space-y-3">
-                <div v-for="(item, idx) in currentList" :key="idx" 
+                <div v-for="(item, idx) in filteredList" :key="item.id" 
                     class="green-card p-0 rounded-2xl relative transition-all overflow-hidden" 
                     :class="{'completed-card': item.checked}">
                     <div class="swipe-item">
                         <div class="swipe-content p-4 w-full flex gap-4 items-center">
-                            <button @click="item.checked = !item.checked" class="text-lg shrink-0 transition-colors check-btn" :class="item.checked ? 'text-white' : 'text-[#84A98C]'">
+                            <button @click="toggleCheck(item)" class="text-lg shrink-0 transition-colors check-btn" :class="item.checked ? 'text-white' : 'text-[#84A98C]'">
                                 <i :class="item.checked ? 'fa-solid fa-square-check' : 'fa-regular fa-square'"></i>
                             </button>
                             <div class="relative w-16 h-16 bg-[#F4F7F5] rounded-xl shrink-0 overflow-hidden border border-[#E8ECE9]">
@@ -231,10 +244,14 @@
                                 <div v-else class="w-full h-full flex items-center justify-center text-[#CAD2C5]"><i class="fa-solid fa-image"></i></div>
                             </div>
                             <div class="flex-1 py-1 min-w-0">
-                                <h3 class="font-bold text-base leading-tight mb-1 truncate" :class="item.checked ? 'text-white' : 'text-[#2F3E46]'">{{ item.name }}</h3>
+                                <div class="flex justify-between items-start">
+                                    <h3 class="font-bold text-base leading-tight mb-1 truncate" :class="item.checked ? 'text-white' : 'text-[#2F3E46]'">{{ item.name }}</h3>
+                                    <span v-if="item.category" class="text-[9px] px-1.5 py-0.5 rounded border opacity-70 whitespace-nowrap ml-1" :class="item.checked ? 'border-white text-white' : 'border-[#84A98C] text-[#84A98C]'">{{ item.category }}</span>
+                                </div>
                                 <p class="text-xs mb-2 truncate text-secondary" :class="item.checked ? 'text-white/80' : 'text-[#84A98C]'">{{ item.note }}</p>
+                                
                                 <div class="flex gap-2">
-                                    <a v-if="listType === 'eat'" :href="getNearbyLink(item.name)" target="_blank" class="text-[10px] font-bold px-2 py-1 rounded shadow-sm transition-colors"
+                                    <a v-if="listType === 'eat'" :href="getNearbyLink(item)" target="_blank" class="text-[10px] font-bold px-2 py-1 rounded shadow-sm transition-colors"
                                        :class="item.checked ? 'bg-white text-[#52796F]' : 'bg-[#52796F] text-white hover:bg-[#2F3E46]'">
                                         <i class="fa-solid fa-location-crosshairs mr-1"></i>最近
                                     </a>
@@ -244,14 +261,14 @@
                                     </a>
                                 </div>
                             </div>
-                            <div class="text-[#CAD2C5] text-[10px] absolute right-2 top-1/2 -translate-y-1/2 opacity-30 pointer-events-none" v-if="!item.checked">
-                                <i class="fa-solid fa-chevron-left"></i>
-                            </div>
                         </div>
-                        <div class="swipe-action bg-[#D66853] flex items-center justify-center cursor-pointer" @click="deleteItem(idx)">
+                        <div class="swipe-action bg-[#D66853] flex items-center justify-center cursor-pointer" @click="deleteItem(item)">
                             <i class="fa-solid fa-trash text-white text-lg"></i>
                         </div>
                     </div>
+                </div>
+                <div v-if="filteredList.length === 0" class="text-center text-[#CAD2C5] text-xs mt-10">
+                    {{ showUncheckedOnly && listType === 'buy' ? '太棒了！全部買齊了！' : '清單是空的' }}
                 </div>
             </div>
         </div>
@@ -273,17 +290,16 @@
                 <div class="space-y-4">
                     <div class="flex gap-2">
                         <div class="flex-1">
-                            <label class="text-[10px] text-[#CAD2C5] uppercase block mb-1">JPY (日幣)</label>
+                            <label class="text-[10px] text-[#CAD2C5] uppercase block mb-1">JPY</label>
                             <input type="number" v-model="jpyAmount" class="w-full bg-[#F4F7F5] rounded-xl py-3 text-center text-xl font-bold text-[#2F3E46]" placeholder="0">
                         </div>
                         <div class="flex-1">
-                            <label class="text-[10px] text-[#CAD2C5] uppercase block mb-1">NTD (約台幣)</label>
+                            <label class="text-[10px] text-[#CAD2C5] uppercase block mb-1">NTD</label>
                             <div class="bg-[#2F3E46] text-white rounded-xl py-3 text-center">
                                 <span class="text-xl font-bold">{{ Math.round(jpyAmount * rate).toLocaleString() }}</span>
                             </div>
                         </div>
                     </div>
-                    
                     <div class="flex gap-2 items-center">
                         <input type="text" v-model="historyNote" placeholder="備註 (如: Dyson...)" class="flex-1 bg-white border border-[#E8ECE9] rounded-lg px-3 py-2 text-sm text-[#2F3E46]">
                         <button @click="addHistory" class="bg-[#52796F] text-white w-10 h-10 rounded-lg flex items-center justify-center shadow-md active:scale-95 transition">
@@ -377,13 +393,19 @@
             </button>
         </nav>
 
-        <!-- 設定 Modal (僅保留重置) -->
+        <!-- 設定 Modal (恢復匯出匯入) -->
         <div v-if="showSettings" class="modal-overlay" @click.self="showSettings = false">
             <div class="bg-white w-full max-w-sm rounded-2xl p-6 shadow-2xl relative animate-fade">
                 <button @click="showSettings = false" class="absolute top-4 right-4 text-[#CAD2C5]"><i class="fa-solid fa-times text-xl"></i></button>
-                <h3 class="text-xl font-bold text-[#2F3E46] mb-4">資料管理</h3>
-                <div class="bg-[#F4F7F5] p-4 rounded-xl mb-6 text-xs text-[#84A98C]">
-                    所有資料皆儲存於此手機。
+                <h3 class="text-xl font-bold text-[#2F3E46] mb-4">設定</h3>
+                
+                <div class="bg-[#F4F7F5] p-4 rounded-xl mb-6">
+                    <h4 class="text-sm font-bold text-[#52796F] mb-2"><i class="fa-solid fa-share-nodes mr-1"></i> 資料轉移 (不含匯率紀錄)</h4>
+                    <button @click="exportData" class="w-full bg-[#2F3E46] text-white py-3 rounded-lg text-xs font-bold mb-2"><i class="fa-solid fa-copy mr-1"></i> 複製資料代碼</button>
+                    <div class="flex gap-2">
+                        <input v-model="importString" placeholder="貼上代碼..." class="flex-1 bg-white px-3 py-2 rounded-lg text-xs text-[#2F3E46] border border-[#E8ECE9]">
+                        <button @click="importData" class="bg-[#52796F] text-white px-3 py-2 rounded-lg text-xs font-bold whitespace-nowrap">讀取</button>
+                    </div>
                 </div>
                 <button @click="resetData" class="w-full text-[#D66853] text-xs py-3 border border-[#D66853] rounded-lg hover:bg-[#D66853] hover:text-white transition">清除所有資料</button>
             </div>
@@ -407,6 +429,7 @@
             setup() {
                 const currentTab = ref('schedule');
                 const showSettings = ref(false);
+                const importString = ref('');
                 const viewingImage = ref(null);
                 
                 // 1. Schedule
@@ -455,8 +478,21 @@
                 // 2. Wishlist
                 const listType = ref('buy'); 
                 const wishlist = ref([]);
-                const newItem = ref({ name: '', note: '', image: null });
-                const currentList = computed(() => wishlist.value.filter(item => item.type === listType.value));
+                const newItem = ref({ name: '', note: '', category: '', image: null });
+                const showUncheckedOnly = ref(false); // 購物篩選器
+                
+                const savedMapUrl = ref('');
+                const tempMapUrl = ref('');
+                const isEditingMap = ref(false);
+                const saveMapUrl = () => { if(tempMapUrl.value) { savedMapUrl.value = tempMapUrl.value; isEditingMap.value = false; } };
+
+                const filteredList = computed(() => {
+                    let list = wishlist.value.filter(item => item.type === listType.value);
+                    if (listType.value === 'buy' && showUncheckedOnly.value) {
+                        return list.filter(item => !item.checked);
+                    }
+                    return list;
+                });
 
                 const handleImageUpload = (event, targetObj) => {
                     const file = event.target.files[0];
@@ -481,16 +517,19 @@
                 const addItem = () => {
                     if (!newItem.value.name) return;
                     wishlist.value.unshift({ 
+                        id: Date.now(),
                         type: listType.value, name: newItem.value.name, note: newItem.value.note, 
+                        category: newItem.value.category, // 新增分類
                         image: newItem.value.image, checked: false 
                     });
-                    newItem.value = { name: '', note: '', image: null };
+                    newItem.value = { name: '', note: '', category: '', image: null };
                 };
-                const deleteItem = (idx) => {
-                    const itemToDelete = currentList.value[idx];
-                    const realIndex = wishlist.value.indexOf(itemToDelete);
-                    if (realIndex > -1) wishlist.value.splice(realIndex, 1);
+                const deleteItem = (item) => {
+                    const idx = wishlist.value.indexOf(item);
+                    if (idx > -1) wishlist.value.splice(idx, 1);
                 };
+                const toggleCheck = (item) => { item.checked = !item.checked; };
+                
                 const viewImage = (src) => { viewingImage.value = src; };
                 const deleteViewingImage = () => {
                     if(!confirm("刪除照片？")) return;
@@ -502,9 +541,13 @@
                     });
                     viewingImage.value = null; 
                 };
-                const getNearbyLink = (name) => `https://www.google.com/maps/search/${encodeURIComponent(name + ' near me')}`;
+                const getNearbyLink = (item) => {
+                    // 美食清單連動: 如果有分類就用分類查，不然用名稱
+                    const query = item.category ? `${item.name} ${item.category}` : item.name;
+                    return `https://www.google.com/maps/search/${encodeURIComponent(query + ' near me')}`;
+                };
 
-                // 3. Currency (History Mode) - New API
+                // 3. Currency (History Mode) - API
                 const rate = ref(0.215); 
                 const jpyAmount = ref('');
                 const isLoadingRate = ref(false);
@@ -517,8 +560,7 @@
                     try {
                         const res = await fetch('https://open.er-api.com/v6/latest/JPY');
                         const data = await res.json();
-                        const rawRate = data.rates.TWD;
-                        rate.value = (rawRate * 1.02).toFixed(3);
+                        rate.value = (data.rates.TWD * 1.02).toFixed(3);
                         lastUpdated.value = new Date().toLocaleTimeString('zh-TW', {hour: '2-digit', minute:'2-digit'});
                     } catch (e) { alert('更新失敗，請檢查網路'); } finally { isLoadingRate.value = false; }
                 };
@@ -554,47 +596,94 @@
                     return Math.round(paid - (totalExpense.value / travelers.value.length));
                 };
 
-                // Storage
+                // Storage & Migration Logic (Key: V13)
                 onMounted(() => {
-                    const savedData = localStorage.getItem('tokyoTripV12');
+                    const keyV13 = 'tokyoTripV13';
+                    const keyV12 = 'tokyoTripV12';
+                    const savedData = localStorage.getItem(keyV13);
+                    
                     if (savedData) {
-                        try {
-                            const data = JSON.parse(savedData);
-                            itinerary.value = data.itinerary || itinerary.value;
-                            wishlist.value = data.wishlist || [];
-                            rate.value = data.rate || 0.215;
-                            expenses.value = data.expenses || [];
-                            travelerInput.value = data.travelerInput || '我, 旅伴';
-                            lastUpdated.value = data.lastUpdated || '';
-                            currencyHistory.value = data.currencyHistory || [];
-                        } catch(e) {}
+                        loadData(JSON.parse(savedData));
+                    } else {
+                        // Migration: Check V12
+                        const oldData = localStorage.getItem(keyV12);
+                        if (oldData) {
+                            console.log("Migrating from V12...");
+                            loadData(JSON.parse(oldData));
+                        }
                     }
+                    
                     document.getElementById('loading').style.display = 'none';
                     document.getElementById('app').classList.remove('hidden');
                     nextTick(() => initSortable());
                 });
 
-                watch([itinerary, wishlist, rate, expenses, travelerInput, lastUpdated, currencyHistory], () => {
+                const loadData = (data) => {
                     try {
-                        localStorage.setItem('tokyoTripV12', JSON.stringify({
+                        itinerary.value = data.itinerary || itinerary.value;
+                        wishlist.value = data.wishlist || [];
+                        rate.value = data.rate || 0.215;
+                        expenses.value = data.expenses || [];
+                        travelerInput.value = data.travelerInput || '我, 旅伴';
+                        lastUpdated.value = data.lastUpdated || '';
+                        currencyHistory.value = data.currencyHistory || [];
+                        savedMapUrl.value = data.savedMapUrl || '';
+                    } catch(e) { console.error(e); }
+                };
+
+                watch([itinerary, wishlist, rate, expenses, travelerInput, lastUpdated, currencyHistory, savedMapUrl], () => {
+                    try {
+                        localStorage.setItem('tokyoTripV13', JSON.stringify({
                             itinerary: itinerary.value, wishlist: wishlist.value,
                             rate: rate.value, expenses: expenses.value, 
                             travelerInput: travelerInput.value, lastUpdated: lastUpdated.value,
-                            currencyHistory: currencyHistory.value
+                            currencyHistory: currencyHistory.value, savedMapUrl: savedMapUrl.value
                         }));
                     } catch (e) { alert('儲存空間已滿，請刪除部分照片'); }
                 }, { deep: true });
 
-                const resetData = () => { if(confirm('警告：刪除所有資料！')) { localStorage.removeItem('tokyoTripV12'); location.reload(); } }
+                const resetData = () => { if(confirm('警告：刪除所有資料！')) { localStorage.removeItem('tokyoTripV13'); location.reload(); } }
+
+                // Export: Exclude Currency History
+                const exportData = () => {
+                    const data = JSON.stringify({
+                        itinerary: itinerary.value, wishlist: wishlist.value,
+                        rate: rate.value, expenses: expenses.value, 
+                        travelerInput: travelerInput.value, savedMapUrl: savedMapUrl.value
+                        // Exclude currencyHistory & lastUpdated
+                    });
+                    const encoded = btoa(unescape(encodeURIComponent(data)));
+                    navigator.clipboard.writeText(encoded).then(() => alert('代碼已複製！')).catch(() => alert('複製失敗'));
+                };
+
+                const importData = () => {
+                    if(!importString.value) return;
+                    try {
+                        const decoded = decodeURIComponent(escape(atob(importString.value)));
+                        const data = JSON.parse(decoded);
+                        if(confirm('確定覆蓋資料？(私人匯率紀錄不會被覆蓋)')) {
+                            // Only overwrite shared data
+                            itinerary.value = data.itinerary || itinerary.value;
+                            wishlist.value = data.wishlist || [];
+                            expenses.value = data.expenses || [];
+                            travelerInput.value = data.travelerInput || '我, 旅伴';
+                            savedMapUrl.value = data.savedMapUrl || '';
+                            // Keep current rate & currencyHistory
+                            alert('成功！'); showSettings.value = false; importString.value = '';
+                            nextTick(() => initSortable());
+                        }
+                    } catch (e) { alert('代碼錯誤'); }
+                };
 
                 return {
-                    currentTab, showSettings, viewingImage,
+                    currentTab, showSettings, importString, viewingImage,
                     currentDayIndex, itinerary, addDay, addEvent, removeEvent, changeDay,
                     getMapLink, getDailyRouteLink, getRouteLink,
-                    listType, currentList, newItem, addItem, deleteItem, handleImageUpload, viewImage, deleteViewingImage, getNearbyLink,
+                    listType, currentList, filteredList, newItem, addItem, deleteItem, toggleCheck, handleImageUpload, viewImage, deleteViewingImage, getNearbyLink,
+                    showUncheckedOnly, savedMapUrl, tempMapUrl, isEditingMap, saveMapUrl,
                     rate, jpyAmount, fetchRate, isLoadingRate, lastUpdated, historyNote, currencyHistory, addHistory, deleteHistory,
                     travelerInput, travelers, expenses, newExpense, addExpense, totalExpense, getBalance, updateTravelers, 
-                    resetData
+                    resetData, exportData, importData
                 };
             }
         });
