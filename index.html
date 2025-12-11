@@ -41,15 +41,22 @@
         .swipe-action { min-width: 80px; scroll-snap-align: end; }
         .route-connector { position: relative; margin-left: 28px; padding-left: 20px; border-left: 2px dashed #CAD2C5; padding-top: 12px; padding-bottom: 12px; }
         
-        #loading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; items-center; background: #F4F7F5; z-index: 9999; color: #52796F; transition: opacity 0.3s; pointer-events: none;}
+        #loading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; items-center; background: #F4F7F5; z-index: 9999; color: #52796F; transition: opacity 0.3s; }
+        .emergency-btn { margin-top: 20px; padding: 8px 16px; border: 1px solid #D66853; color: #D66853; border-radius: 8px; font-size: 12px; font-weight: bold; background: white; }
     </style>
 </head>
 <body class="safe-top h-screen flex flex-col">
 
-    <!-- Loading -->
+    <!-- 安全載入畫面 (含緊急重置) -->
     <div id="loading">
         <i class="fa-solid fa-plane fa-bounce text-3xl mb-3"></i>
-        <div class="text-xs font-bold tracking-widest uppercase">Tokyo Trip</div>
+        <div class="text-xs font-bold tracking-widest uppercase mb-4">Tokyo Trip</div>
+        <div class="text-[10px] text-[#84A98C]">正在嘗試修復資料...</div>
+        
+        <!-- 這就是救命按鈕 -->
+        <button onclick="emergencyReset()" class="emergency-btn">
+            <i class="fa-solid fa-triangle-exclamation mr-1"></i> 若卡住請點此重置
+        </button>
     </div>
 
     <div id="app" class="h-full hidden">
@@ -232,9 +239,6 @@
                         </div>
                     </div>
                 </div>
-                <div v-if="filteredList.length === 0" class="text-center text-[#CAD2C5] text-xs mt-10">
-                    {{ showUncheckedOnly && listType === 'buy' ? '太棒了！全部買齊了！' : '清單是空的' }}
-                </div>
             </div>
         </div>
 
@@ -255,7 +259,7 @@
                 <div class="space-y-4">
                     <div class="flex gap-2">
                         <div class="flex-1">
-                            <label class="text-[10px] text-[#CAD2C5] uppercase block mb-1">JPY</label>
+                            <label class="text-[10px] text-[#CAD2C5] uppercase block mb-1">JPY (日幣)</label>
                             <input type="number" v-model="jpyAmount" class="w-full bg-[#F4F7F5] rounded-xl py-3 text-center text-xl font-bold text-[#2F3E46]" placeholder="0">
                         </div>
                         <div class="flex-1">
@@ -338,7 +342,6 @@
             </div>
         </div>
 
-        <!-- 底部導航 -->
         <nav class="fixed bottom-0 w-full glass-nav flex justify-around items-center pt-3 z-50">
             <button @click="currentTab = 'schedule'" class="group" :class="currentTab === 'schedule' ? 'text-[#2F3E46]' : 'text-[#CAD2C5]'">
                 <i class="fa-solid fa-map-location text-xl mb-1 transition-colors"></i>
@@ -358,26 +361,20 @@
             </button>
         </nav>
 
-        <!-- 設定 Modal -->
         <div v-if="showSettings" class="modal-overlay" @click.self="showSettings = false">
             <div class="bg-white w-full max-w-sm rounded-2xl p-6 shadow-2xl relative animate-fade">
                 <button @click="showSettings = false" class="absolute top-4 right-4 text-[#CAD2C5]"><i class="fa-solid fa-times text-xl"></i></button>
                 <h3 class="text-xl font-bold text-[#2F3E46] mb-4">設定</h3>
                 
-                <!-- 手動備份區 -->
                 <div class="bg-[#F4F7F5] p-4 rounded-xl mb-4">
-                    <h4 class="text-sm font-bold text-[#52796F] mb-2"><i class="fa-solid fa-floppy-disk mr-1"></i> 手動備份 (推薦)</h4>
-                    <p class="text-[10px] text-[#84A98C] mb-3">擔心資料遺失？請隨時按下備份。下次卡住時，點擊下方「讀取備份」即可還原。</p>
-                    <button @click="saveManualBackup" class="w-full bg-[#52796F] text-white py-2 rounded-lg text-xs font-bold mb-2 active:scale-95 transition">
-                        💾 建立目前備份
-                    </button>
-                    <button @click="loadManualBackup" class="w-full bg-white border border-[#52796F] text-[#52796F] py-2 rounded-lg text-xs font-bold active:scale-95 transition">
-                        📂 讀取備份
-                    </button>
+                    <h4 class="text-sm font-bold text-[#52796F] mb-2"><i class="fa-solid fa-floppy-disk mr-1"></i> 手動備份</h4>
+                    <p class="text-[10px] text-[#84A98C] mb-3">若擔心資料遺失，請建立備份。</p>
+                    <button @click="saveManualBackup" class="w-full bg-[#52796F] text-white py-2 rounded-lg text-xs font-bold mb-2 active:scale-95 transition">💾 建立目前備份</button>
+                    <button @click="loadManualBackup" class="w-full bg-white border border-[#52796F] text-[#52796F] py-2 rounded-lg text-xs font-bold active:scale-95 transition">📂 讀取備份</button>
                 </div>
 
                 <div class="bg-[#F4F7F5] p-4 rounded-xl mb-6">
-                    <h4 class="text-sm font-bold text-[#52796F] mb-2"><i class="fa-solid fa-share-nodes mr-1"></i> 資料轉移 (給朋友)</h4>
+                    <h4 class="text-sm font-bold text-[#52796F] mb-2"><i class="fa-solid fa-share-nodes mr-1"></i> 資料轉移 (無匯率紀錄)</h4>
                     <button @click="exportData" class="w-full bg-[#2F3E46] text-white py-3 rounded-lg text-xs font-bold mb-2"><i class="fa-solid fa-copy mr-1"></i> 複製資料代碼</button>
                     <div class="flex gap-2">
                         <input v-model="importString" placeholder="貼上代碼..." class="flex-1 bg-white px-3 py-2 rounded-lg text-xs text-[#2F3E46] border border-[#E8ECE9]">
@@ -388,7 +385,6 @@
             </div>
         </div>
 
-        <!-- 圖片 Modal -->
         <div v-if="viewingImage" class="modal-overlay" @click.self="viewingImage = null">
             <div class="relative max-w-lg w-full p-4">
                 <img :src="viewingImage" class="w-full rounded-lg shadow-2xl">
@@ -398,6 +394,16 @@
         </div>
 
     </div>
+
+    <!-- 全域緊急重置腳本 -->
+    <script>
+        window.emergencyReset = () => {
+            if(confirm('這將清除所有資料並修復卡住問題，確定嗎？')) {
+                localStorage.clear();
+                location.reload();
+            }
+        }
+    </script>
 
     <script>
         const { createApp, ref, computed, watch, onMounted, nextTick } = Vue;
@@ -536,7 +542,7 @@
                         const rawRate = data.rates.TWD;
                         rate.value = (rawRate * 1.02).toFixed(3);
                         lastUpdated.value = new Date().toLocaleTimeString('zh-TW', {hour: '2-digit', minute:'2-digit'});
-                    } catch (e) { alert('更新失敗，請檢查網路'); } finally { isLoadingRate.value = false; }
+                    } catch (e) { alert('更新失敗'); } finally { isLoadingRate.value = false; }
                 };
 
                 const addHistory = () => {
@@ -571,51 +577,53 @@
 
                 // Storage & Migration Logic
                 onMounted(() => {
-                    // Safety: Force show after 0.5s no matter what
                     setTimeout(() => {
                         const loader = document.getElementById('loading');
                         if(loader) loader.style.display = 'none';
                         const app = document.getElementById('app');
                         if(app) app.classList.remove('hidden');
                         nextTick(() => initSortable());
-                    }, 500);
+                    }, 500); // 0.5s Force Open
 
-                    // Try loading data
-                    const keyCurrent = 'tokyoTripV17';
-                    const savedData = localStorage.getItem(keyCurrent);
-                    
-                    if (savedData) {
-                        loadData(JSON.parse(savedData));
-                    } else {
-                        // Manual Backup Check
-                        const manual = localStorage.getItem('tokyoTrip_ManualBackup');
-                        if(manual) {
-                            loadData(JSON.parse(manual));
+                    // Try load data with error handling
+                    try {
+                        const keyCurrent = 'tokyoTripV17';
+                        const savedData = localStorage.getItem(keyCurrent);
+                        
+                        if (savedData) {
+                            loadData(JSON.parse(savedData));
                         } else {
-                            // Legacy Check
-                            const legacyKeys = ['tokyoTripV16', 'tokyoTripV15', 'tokyoTripV14', 'tokyoTripV13'];
-                            for (const key of legacyKeys) {
-                                const old = localStorage.getItem(key);
-                                if (old) { loadData(JSON.parse(old)); break; }
+                            // Check backups
+                            const manual = localStorage.getItem('tokyoTrip_ManualBackup');
+                            if(manual) {
+                                loadData(JSON.parse(manual));
+                            } else {
+                                // Try legacy keys
+                                const legacyKeys = ['tokyoTripV16', 'tokyoTripV15', 'tokyoTripV14', 'tokyoTripV13'];
+                                for (const key of legacyKeys) {
+                                    const old = localStorage.getItem(key);
+                                    if (old) { loadData(JSON.parse(old)); break; }
+                                }
                             }
                         }
+                    } catch (e) {
+                        console.error("Data load error", e);
+                        // If error happens here, the force timeout above will still open the app
                     }
                 });
 
                 const loadData = (data) => {
-                    try {
-                        itinerary.value = data.itinerary || itinerary.value;
-                        wishlist.value = data.wishlist || [];
-                        rate.value = data.rate || 0.215;
-                        expenses.value = data.expenses || [];
-                        travelerInput.value = data.travelerInput || '我, 旅伴';
-                        lastUpdated.value = data.lastUpdated || '';
-                        currencyHistory.value = data.currencyHistory || [];
-                        savedMapUrl.value = data.savedMapUrl || '';
-                    } catch(e) {}
+                    if (!data) return;
+                    itinerary.value = data.itinerary || itinerary.value;
+                    wishlist.value = data.wishlist || [];
+                    rate.value = data.rate || 0.215;
+                    expenses.value = data.expenses || [];
+                    travelerInput.value = data.travelerInput || '我, 旅伴';
+                    lastUpdated.value = data.lastUpdated || '';
+                    currencyHistory.value = data.currencyHistory || [];
+                    savedMapUrl.value = data.savedMapUrl || '';
                 };
 
-                // Manual Backup Feature
                 const saveManualBackup = () => {
                     const data = {
                         itinerary: itinerary.value, wishlist: wishlist.value,
@@ -625,7 +633,7 @@
                     };
                     try {
                         localStorage.setItem('tokyoTrip_ManualBackup', JSON.stringify(data));
-                        alert('備份成功！下次若資料遺失，請按「讀取備份」。');
+                        alert('備份成功！');
                     } catch(e) { alert('備份失敗：空間不足'); }
                 };
 
@@ -638,7 +646,7 @@
                             nextTick(() => initSortable());
                         }
                     } else {
-                        alert('找不到備份檔案，請先執行「建立備份」。');
+                        alert('找不到備份檔案');
                     }
                 };
 
@@ -650,7 +658,7 @@
                             travelerInput: travelerInput.value, lastUpdated: lastUpdated.value,
                             currencyHistory: currencyHistory.value, savedMapUrl: savedMapUrl.value
                         }));
-                    } catch (e) { alert('儲存空間已滿，請刪除部分照片'); }
+                    } catch (e) { console.log('Storage full'); }
                 }, { deep: true });
 
                 const resetData = () => { if(confirm('警告：刪除所有資料！')) { localStorage.removeItem('tokyoTripV17'); location.reload(); } }
@@ -670,7 +678,7 @@
                     try {
                         const decoded = decodeURIComponent(escape(atob(importString.value)));
                         const data = JSON.parse(decoded);
-                        if(confirm('確定覆蓋資料？(私人匯率紀錄不會被覆蓋)')) {
+                        if(confirm('確定覆蓋資料？')) {
                             itinerary.value = data.itinerary || itinerary.value;
                             wishlist.value = data.wishlist || [];
                             expenses.value = data.expenses || [];
