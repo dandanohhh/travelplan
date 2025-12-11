@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Tokyo Green Trip V14</title>
+    <meta name="apple-mobile-web-app-title" content="Tokyo Trip">
+    <title>Tokyo Trip</title>
     
     <!-- CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -47,7 +48,11 @@
         .completed-card .text-secondary { color: rgba(255,255,255,0.8) !important; }
         .completed-card .check-btn { color: white !important; }
         
+        .sortable-ghost { opacity: 0.4; background: #E8ECE9; }
+        .sortable-drag { background: white; transform: scale(1.02); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+
         .gmap-card { background: white; border: 1px solid #E8ECE9; border-left: 4px solid #4285F4; }
+        .hotel-card { background: linear-gradient(135deg, #2F3E46 0%, #354F52 100%); color: white; box-shadow: 0 8px 20px rgba(47, 62, 70, 0.2); }
 
         .glass-nav {
             background: rgba(244, 247, 245, 0.96);
@@ -68,28 +73,15 @@
 
         .route-connector { position: relative; margin-left: 28px; padding-left: 20px; border-left: 2px dashed #CAD2C5; padding-top: 12px; padding-bottom: 12px; }
         
-        /* 進度條載入畫面 */
-        #loading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; items-center; background: #F4F7F5; z-index: 9999; color: #52796F; transition: opacity 0.5s; }
-        .progress-bar-container { width: 200px; height: 6px; background: #E8ECE9; border-radius: 99px; overflow: hidden; margin-top: 15px; }
-        .progress-bar-fill { height: 100%; background: #52796F; width: 0%; transition: width 0.1s linear; }
-        .spin { animation: spin 1s linear infinite; }
-        @keyframes spin { 100% { transform: rotate(360deg); } }
-        .fade-out { opacity: 0; pointer-events: none; }
+        #loading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; items-center; background: #F4F7F5; z-index: 9999; color: #52796F; transition: opacity 0.3s; }
     </style>
 </head>
 <body class="safe-top h-screen flex flex-col">
 
-    <!-- 進度條 Loading 畫面 -->
+    <!-- 安全載入畫面 -->
     <div id="loading">
-        <div class="text-center">
-            <i class="fa-solid fa-plane-up fa-bounce text-4xl mb-4"></i>
-            <div class="text-sm font-bold tracking-widest text-[#2F3E46] mb-1">TOKYO TRIP</div>
-            <div class="text-[10px] text-[#84A98C] h-4" id="loading-text">準備中...</div>
-        </div>
-        <div class="progress-bar-container">
-            <div id="progress-fill" class="progress-bar-fill"></div>
-        </div>
-        <div class="text-[10px] text-[#52796F] mt-2 font-mono" id="progress-num">0%</div>
+        <i class="fa-solid fa-plane fa-bounce text-3xl mb-3"></i>
+        <div class="text-xs font-bold tracking-widest uppercase">Tokyo Trip</div>
     </div>
 
     <div id="app" class="h-full hidden">
@@ -98,7 +90,7 @@
         <header class="px-6 pt-6 pb-2 bg-[#F4F7F5] sticky top-0 z-20">
             <div class="flex justify-between items-center mb-2">
                 <div>
-                    <h1 class="text-2xl font-serif font-bold tracking-wide text-[#2F3E46]">TOKYO<span class="text-[#52796F]">.</span></h1>
+                    <h1 class="text-2xl font-serif font-bold tracking-wide text-[#2F3E46]">TOKYO <span class="text-[#52796F]">TRIP</span></h1>
                     <p class="text-[10px] text-[#84A98C] tracking-[0.2em] uppercase">Travel Companion</p>
                 </div>
                 <button @click="showSettings = true" class="w-8 h-8 rounded-full border border-[#CAD2C5] text-[#52796F] flex items-center justify-center hover:bg-[#2F3E46] hover:text-white transition">
@@ -295,7 +287,7 @@
                 <div class="space-y-4">
                     <div class="flex gap-2">
                         <div class="flex-1">
-                            <label class="text-[10px] text-[#CAD2C5] uppercase block mb-1">JPY</label>
+                            <label class="text-[10px] text-[#CAD2C5] uppercase block mb-1">JPY (日幣)</label>
                             <input type="number" v-model="jpyAmount" class="w-full bg-[#F4F7F5] rounded-xl py-3 text-center text-xl font-bold text-[#2F3E46]" placeholder="0">
                         </div>
                         <div class="flex-1">
@@ -378,6 +370,7 @@
             </div>
         </div>
 
+        <!-- 底部導航 -->
         <nav class="fixed bottom-0 w-full glass-nav flex justify-around items-center pt-3 z-50">
             <button @click="currentTab = 'schedule'" class="group" :class="currentTab === 'schedule' ? 'text-[#2F3E46]' : 'text-[#CAD2C5]'">
                 <i class="fa-solid fa-map-location text-xl mb-1 transition-colors"></i>
@@ -397,13 +390,14 @@
             </button>
         </nav>
 
+        <!-- 設定 Modal (資料轉移) -->
         <div v-if="showSettings" class="modal-overlay" @click.self="showSettings = false">
             <div class="bg-white w-full max-w-sm rounded-2xl p-6 shadow-2xl relative animate-fade">
                 <button @click="showSettings = false" class="absolute top-4 right-4 text-[#CAD2C5]"><i class="fa-solid fa-times text-xl"></i></button>
-                <h3 class="text-xl font-bold text-[#2F3E46] mb-4">設定 (V14)</h3>
+                <h3 class="text-xl font-bold text-[#2F3E46] mb-4">設定 (V16)</h3>
                 
                 <div class="bg-[#F4F7F5] p-4 rounded-xl mb-6">
-                    <h4 class="text-sm font-bold text-[#52796F] mb-2"><i class="fa-solid fa-share-nodes mr-1"></i> 資料轉移 (無匯率紀錄)</h4>
+                    <h4 class="text-sm font-bold text-[#52796F] mb-2"><i class="fa-solid fa-share-nodes mr-1"></i> 資料轉移 (不含匯率紀錄)</h4>
                     <button @click="exportData" class="w-full bg-[#2F3E46] text-white py-3 rounded-lg text-xs font-bold mb-2"><i class="fa-solid fa-copy mr-1"></i> 複製資料代碼</button>
                     <div class="flex gap-2">
                         <input v-model="importString" placeholder="貼上代碼..." class="flex-1 bg-white px-3 py-2 rounded-lg text-xs text-[#2F3E46] border border-[#E8ECE9]">
@@ -414,6 +408,7 @@
             </div>
         </div>
 
+        <!-- 圖片 Modal -->
         <div v-if="viewingImage" class="modal-overlay" @click.self="viewingImage = null">
             <div class="relative max-w-lg w-full p-4">
                 <img :src="viewingImage" class="w-full rounded-lg shadow-2xl">
@@ -558,7 +553,8 @@
                     try {
                         const res = await fetch('https://open.er-api.com/v6/latest/JPY');
                         const data = await res.json();
-                        rate.value = (data.rates.TWD * 1.02).toFixed(3);
+                        const rawRate = data.rates.TWD;
+                        rate.value = (rawRate * 1.02).toFixed(3);
                         lastUpdated.value = new Date().toLocaleTimeString('zh-TW', {hour: '2-digit', minute:'2-digit'});
                     } catch (e) { alert('更新失敗'); } finally { isLoadingRate.value = false; }
                 };
@@ -593,51 +589,32 @@
                     return Math.round(paid - (totalExpense.value / travelers.value.length));
                 };
 
-                onMounted(async () => {
-                    const keyCurrent = 'tokyoTripV14';
-                    const keyLegacy = 'tokyoTripV13';
+                onMounted(() => {
+                    // 強制啟動機制：1秒後無論如何都要顯示 App
+                    setTimeout(() => {
+                        document.getElementById('loading').style.display = 'none';
+                        document.getElementById('app').classList.remove('hidden');
+                        nextTick(() => initSortable());
+                    }, 1000);
+
+                    // 資料載入與繼承邏輯
+                    const keyCurrent = 'tokyoTripApp'; // 正式版 Key
                     const savedData = localStorage.getItem(keyCurrent);
                     
                     if (savedData) {
                         loadData(JSON.parse(savedData));
                     } else {
-                        const oldData = localStorage.getItem(keyLegacy);
-                        if (oldData) {
-                            // 模擬資料繼承的進度條
-                            await simulateProgress();
-                            loadData(JSON.parse(oldData));
+                        // 繼承順序: V15 -> V14 -> V13 -> V12
+                        const legacyKeys = ['tokyoTripV15', 'tokyoTripV14', 'tokyoTripV13', 'tokyoTripV12'];
+                        for (const key of legacyKeys) {
+                            const oldData = localStorage.getItem(key);
+                            if (oldData) {
+                                loadData(JSON.parse(oldData));
+                                break; 
+                            }
                         }
                     }
-                    
-                    const loader = document.getElementById('loading');
-                    loader.classList.add('fade-out');
-                    setTimeout(() => {
-                        loader.style.display = 'none';
-                        document.getElementById('app').classList.remove('hidden');
-                        nextTick(() => initSortable());
-                    }, 500);
                 });
-
-                const simulateProgress = () => {
-                    return new Promise(resolve => {
-                        const fill = document.getElementById('progress-fill');
-                        const num = document.getElementById('progress-num');
-                        const text = document.getElementById('loading-text');
-                        let p = 0;
-                        text.innerText = "發現舊資料，正在繼承...";
-                        const intv = setInterval(() => {
-                            p += Math.floor(Math.random() * 15) + 5;
-                            if (p > 100) p = 100;
-                            fill.style.width = p + '%';
-                            num.innerText = p + '%';
-                            if (p === 100) {
-                                clearInterval(intv);
-                                text.innerText = "繼承完成！";
-                                setTimeout(resolve, 300);
-                            }
-                        }, 100);
-                    });
-                };
 
                 const loadData = (data) => {
                     try {
@@ -654,7 +631,7 @@
 
                 watch([itinerary, wishlist, rate, expenses, travelerInput, lastUpdated, currencyHistory, savedMapUrl], () => {
                     try {
-                        localStorage.setItem('tokyoTripV14', JSON.stringify({
+                        localStorage.setItem('tokyoTripApp', JSON.stringify({
                             itinerary: itinerary.value, wishlist: wishlist.value,
                             rate: rate.value, expenses: expenses.value, 
                             travelerInput: travelerInput.value, lastUpdated: lastUpdated.value,
@@ -663,7 +640,7 @@
                     } catch (e) { alert('儲存空間已滿，請刪除部分照片'); }
                 }, { deep: true });
 
-                const resetData = () => { if(confirm('警告：刪除所有資料！')) { localStorage.removeItem('tokyoTripV14'); location.reload(); } }
+                const resetData = () => { if(confirm('警告：刪除所有資料！')) { localStorage.removeItem('tokyoTripApp'); location.reload(); } }
 
                 const exportData = () => {
                     const data = JSON.stringify({
