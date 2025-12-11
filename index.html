@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Tokyo Trip V44</title>
+    <title>Tokyo Trip V45</title>
     
     <!-- 1. 樣式庫 -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -31,19 +31,21 @@
             color: var(--primary);
             padding-bottom: 120px;
             -webkit-tap-highlight-color: transparent;
-            /* V44: 針對 iOS 允許全域點擊，只鎖定文字選取 */
-            user-select: none; 
-            -webkit-user-select: none;
+            /* V45: 移除全域禁止選取，解決貼上問題 */
         }
         .safe-top { padding-top: max(20px, env(safe-area-inset-top)); }
         
-        /* === V44 重點：強制輸入框可互動、可貼上 === */
+        /* 針對不需要選取的 UI 元素手動加上禁止 */
+        .noselect {
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        /* 確保輸入框絕對原生，無任何干擾 */
         input, textarea, select {
-            user-select: text !important;
             -webkit-user-select: text !important;
-            -webkit-touch-callout: default !important; /* 允許 iOS 選單 */
-            pointer-events: auto !important;
-            cursor: auto !important;
+            user-select: text !important;
+            -webkit-touch-callout: default !important;
             outline: none; 
             background: transparent;
         }
@@ -94,7 +96,7 @@
         
         select { padding-right: 0 !important; text-align-last: center; }
 
-        /* 緊急救援按鈕 (預設顯示，Vue 載入成功後 JS 會把它隱藏) */
+        /* 緊急救援按鈕 */
         #panic-btn {
             position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
             background: white; border: 4px solid #FF4081; color: #FF4081;
@@ -102,11 +104,9 @@
             text-align: center; width: 80%; box-shadow: 0 20px 50px rgba(0,0,0,0.2);
         }
         
-        /* 避免 Vue 未載入前顯示亂碼 */
         [v-cloak] { display: none; }
     </style>
 
-    <!-- 救命腳本：完全獨立於 Vue 之外 -->
     <script>
         function manualReset() {
             if(confirm('這將清除資料並重整，修復白屏問題。確定嗎？')) {
@@ -118,7 +118,6 @@
 </head>
 <body class="safe-top h-screen flex flex-col">
 
-    <!-- 靜態救援按鈕 (如果 Vue 掛了，您一定看得到這個) -->
     <div id="panic-btn">
         <div class="text-4xl mb-4">⚠️</div>
         <div class="text-lg mb-2">App 啟動失敗？</div>
@@ -128,17 +127,16 @@
         </button>
     </div>
 
-    <!-- App 主體 -->
     <div id="app" v-cloak class="h-full flex flex-col relative z-10 bg-[#FFF0F5]">
 
         <!-- Header -->
-        <header class="px-6 pt-4 pb-4 bg-[#FFF0F5] sticky top-0 z-30 shadow-sm">
+        <header class="px-6 pt-4 pb-4 bg-[#FFF0F5] sticky top-0 z-30 shadow-sm noselect">
             <div class="flex justify-between items-center">
                 <div>
                     <h1 class="text-3xl font-black tracking-wide text-[#FF4081]">
                         TOKYO <i class="fa-solid fa-heart text-[#00BCD4]"></i>
                     </h1>
-                    <p class="text-[10px] text-[#00BCD4] font-bold tracking-widest uppercase">Powerpuff Trip V44</p>
+                    <p class="text-[10px] text-[#00BCD4] font-bold tracking-widest uppercase">Powerpuff Trip V45</p>
                 </div>
                 <button @click="showSettings = true" class="w-10 h-10 rounded-full bg-white shadow text-[#FF4081] flex items-center justify-center active:bg-gray-100">
                     <i class="fa-solid fa-gear"></i>
@@ -149,7 +147,7 @@
         <!-- 1. 行程表 (Schedule) -->
         <div v-show="currentTab === 'schedule'" class="px-5 pb-10 flex-1 overflow-y-auto hide-scrollbar">
             <!-- 天數切換 -->
-            <div class="flex items-center justify-between mb-6 pt-2">
+            <div class="flex items-center justify-between mb-6 pt-2 noselect">
                 <div class="flex overflow-x-auto hide-scrollbar gap-3 w-3/4 py-1">
                     <button v-for="(day, index) in itinerary" :key="index" @click="changeDay(index)"
                         class="px-5 py-2 rounded-2xl whitespace-nowrap text-xs font-bold border-2 flex flex-col items-center justify-center h-14 min-w-[70px] transition-all"
@@ -164,14 +162,14 @@
                 </a>
             </div>
 
-            <div v-if="startDate" class="text-center text-[#FF4081] font-bold text-sm mb-4">{{ getFullDayDate(currentDayIndex) }}</div>
+            <div v-if="startDate" class="text-center text-[#FF4081] font-bold text-sm mb-4 noselect">{{ getFullDayDate(currentDayIndex) }}</div>
 
             <div class="space-y-4" id="sortable-list">
                 <template v-for="(event, idx) in itinerary[currentDayIndex].events" :key="event.id">
                     
                     <div class="ppg-card p-5 relative z-10 group" :data-id="event.id">
                         <!-- 右上角功能區 -->
-                        <div class="absolute top-2 right-2 flex gap-2">
+                        <div class="absolute top-2 right-2 flex gap-2 noselect">
                             <button @click="openMoveModal(idx)" class="text-[#00BCD4] p-1 hover:bg-[#E0F7FA] rounded transition">
                                 <i class="fa-solid fa-right-to-bracket"></i>
                             </button>
@@ -181,7 +179,7 @@
                         </div>
                         
                         <div class="flex gap-4 items-start">
-                            <div class="drag-handle text-[#FFCDD2] pt-3 px-1"><i class="fa-solid fa-grip-vertical"></i></div>
+                            <div class="drag-handle text-[#FFCDD2] pt-3 px-1 noselect"><i class="fa-solid fa-grip-vertical"></i></div>
                             <div class="flex flex-col items-center w-14 pt-1 shrink-0">
                                 <input type="time" v-model="event.time" class="text-xs font-bold text-[#333] mb-2 bg-[#FFF0F5] border border-[#FFCDD2] px-1 py-1 rounded w-full text-center">
                                 <div class="relative w-10 h-10">
@@ -193,7 +191,7 @@
                             <div class="flex-1 pt-1 min-w-0 pr-10">
                                 <input type="text" v-model="event.location" placeholder="地點 (可貼上)" class="w-full text-lg font-bold text-[#333] mb-1 placeholder-[#FFCDD2]">
                                 <input type="text" v-model="event.note" placeholder="備註 (可貼上)..." class="w-full text-xs text-[#FF4081] mb-3 opacity-80 placeholder-[#FFCDD2]">
-                                <div class="flex items-center gap-3">
+                                <div class="flex items-center gap-3 noselect">
                                     <a :href="getMapLink(event.location)" target="_blank" class="inline-flex items-center text-[10px] font-bold text-white bg-[#00BCD4] px-3 py-1.5 rounded-full shadow-md">
                                         <i class="fa-solid fa-location-arrow mr-1.5"></i> 導航
                                     </a>
@@ -208,7 +206,7 @@
                     </div>
 
                     <!-- 自動導航按鈕 -->
-                    <div v-if="idx < itinerary[currentDayIndex].events.length - 1" class="route-connector flex items-center">
+                    <div v-if="idx < itinerary[currentDayIndex].events.length - 1" class="route-connector flex items-center noselect">
                         <a :href="getRouteLink(event, itinerary[currentDayIndex].events[idx+1])" target="_blank" 
                            class="bg-white border-2 border-[#00BCD4] text-[#00BCD4] px-4 py-1 rounded-full text-[10px] font-bold shadow-sm flex items-center gap-1.5 active:bg-cyan-50">
                             <i v-if="event.transport === 'walk'" class="fa-solid fa-person-walking"></i>
@@ -219,11 +217,11 @@
                     </div>
                 </template>
 
-                <div class="mt-6">
+                <div class="mt-6 noselect">
                     <button @click="addEvent" class="w-full py-4 rounded-2xl border-2 border-dashed border-[#FF80AB] text-[#FF80AB] text-xs font-bold tracking-widest bg-white active:bg-pink-50">+ ADD PLAN</button>
                 </div>
 
-                <div class="mt-10 pt-6 border-t-2 border-[#FFCDD2]">
+                <div class="mt-10 pt-6 border-t-2 border-[#FFCDD2] noselect">
                     <div class="flex justify-between items-center mb-3">
                          <h3 class="text-[10px] font-bold text-[#FF4081] tracking-widest uppercase pl-1">Tonight's Stay</h3>
                          <button v-if="currentDayIndex > 0" @click="copyFromPreviousDay" class="text-[10px] bg-[#FF4081] text-white px-3 py-1 rounded-full shadow-sm hover:bg-[#F50057] transition font-bold">
@@ -256,48 +254,48 @@
 
         <!-- 2. 清單 (List) -->
         <div v-show="currentTab === 'list'" class="px-5 pt-2 flex-1 overflow-y-auto hide-scrollbar">
-            <div class="flex p-1.5 bg-white rounded-2xl border-2 border-[#FFCDD2] mb-6 shadow-sm">
+            <div class="flex p-1.5 bg-white rounded-2xl border-2 border-[#FFCDD2] mb-6 shadow-sm noselect">
                 <button @click="listType = 'buy'" :class="listType === 'buy' ? 'bg-[#FF4081] text-white shadow-md' : 'text-[#FF80AB]'" class="flex-1 py-3 rounded-xl text-xs font-bold transition-all">購物</button>
                 <button @click="listType = 'eat'" :class="listType === 'eat' ? 'bg-[#00BCD4] text-white shadow-md' : 'text-[#00BCD4]'" class="flex-1 py-3 rounded-xl text-xs font-bold transition-all">美食</button>
             </div>
 
-            <!-- V42: 快速連結 (雙地圖) -->
+            <!-- 快速連結 (雙地圖) -->
             <div class="mb-6 grid grid-cols-1 gap-4">
                 <div class="ppg-card p-4 border-[#00BCD4] !border-l-4">
-                    <div class="flex items-center justify-between mb-2">
+                    <div class="flex items-center justify-between mb-2 noselect">
                         <h3 class="text-sm font-bold text-[#006064]"><i class="fa-solid fa-utensils mr-1"></i> 美食地圖</h3>
                         <button v-if="foodMapUrl" @click="isEditingFood = !isEditingFood" class="text-[10px] text-[#00BCD4] underline">編輯</button>
                     </div>
                     <div v-if="!foodMapUrl || isEditingFood" class="flex gap-2">
-                        <input v-model="tempFoodMapUrl" placeholder="貼上美食地圖..." class="flex-1 bg-[#E0F7FA] px-3 py-2 rounded-lg text-xs text-[#006064]">
-                        <button @click="saveFoodMap" class="bg-[#00BCD4] text-white px-3 py-2 rounded-lg text-xs font-bold shadow">存</button>
+                        <input v-model="tempFoodMapUrl" placeholder="長按貼上..." class="flex-1 bg-[#E0F7FA] px-3 py-2 rounded-lg text-xs text-[#006064]">
+                        <button @click="saveFoodMap" class="bg-[#00BCD4] text-white px-3 py-2 rounded-lg text-xs font-bold shadow noselect">存</button>
                     </div>
-                    <a v-if="foodMapUrl && !isEditingFood" :href="foodMapUrl" target="_blank" class="block w-full bg-[#E0F7FA] text-[#00BCD4] font-bold text-center py-2 rounded-lg text-sm hover:bg-[#B2EBF2] transition">
+                    <a v-if="foodMapUrl && !isEditingFood" :href="foodMapUrl" target="_blank" class="block w-full bg-[#E0F7FA] text-[#00BCD4] font-bold text-center py-2 rounded-lg text-sm hover:bg-[#B2EBF2] transition noselect">
                         開啟美食地圖 <i class="fa-solid fa-arrow-up-right-from-square text-xs ml-1"></i>
                     </a>
                 </div>
 
                 <div class="ppg-card p-4 border-[#FF4081] !border-l-4">
-                    <div class="flex items-center justify-between mb-2">
+                    <div class="flex items-center justify-between mb-2 noselect">
                         <h3 class="text-sm font-bold text-[#C2185B]"><i class="fa-solid fa-bag-shopping mr-1"></i> 購物地圖</h3>
                         <button v-if="shopMapUrl" @click="isEditingShop = !isEditingShop" class="text-[10px] text-[#FF4081] underline">編輯</button>
                     </div>
                     <div v-if="!shopMapUrl || isEditingShop" class="flex gap-2">
-                        <input v-model="tempShopMapUrl" placeholder="貼上購物地圖..." class="flex-1 bg-[#FCE4EC] px-3 py-2 rounded-lg text-xs text-[#C2185B]">
-                        <button @click="saveShopMap" class="bg-[#FF4081] text-white px-3 py-2 rounded-lg text-xs font-bold shadow">存</button>
+                        <input v-model="tempShopMapUrl" placeholder="長按貼上..." class="flex-1 bg-[#FCE4EC] px-3 py-2 rounded-lg text-xs text-[#C2185B]">
+                        <button @click="saveShopMap" class="bg-[#FF4081] text-white px-3 py-2 rounded-lg text-xs font-bold shadow noselect">存</button>
                     </div>
-                    <a v-if="shopMapUrl && !isEditingShop" :href="shopMapUrl" target="_blank" class="block w-full bg-[#FCE4EC] text-[#C2185B] font-bold text-center py-2 rounded-lg text-sm hover:bg-[#F8BBD0] transition">
+                    <a v-if="shopMapUrl && !isEditingShop" :href="shopMapUrl" target="_blank" class="block w-full bg-[#FCE4EC] text-[#C2185B] font-bold text-center py-2 rounded-lg text-sm hover:bg-[#F8BBD0] transition noselect">
                         開啟購物地圖 <i class="fa-solid fa-arrow-up-right-from-square text-xs ml-1"></i>
                     </a>
                 </div>
             </div>
 
-            <div v-if="listType === 'buy'" class="flex justify-end mb-3">
+            <div v-if="listType === 'buy'" class="flex justify-end mb-3 noselect">
                 <button @click="showUncheckedOnly = !showUncheckedOnly" class="text-xs font-bold px-3 py-1.5 rounded-full transition-colors border" :class="showUncheckedOnly ? 'bg-[#FF4081] text-white border-[#FF4081]' : 'text-[#FF80AB] bg-white border-[#FFCDD2]'">只看未買</button>
             </div>
 
             <div class="ppg-card p-4 mb-6 flex gap-3 items-center border-[#FF4081] !border-l-4">
-                <div class="relative w-12 h-12 rounded-xl bg-[#FFF0F5] border-2 border-dashed border-[#FF80AB] flex items-center justify-center text-[#FF80AB] clickable">
+                <div class="relative w-12 h-12 rounded-xl bg-[#FFF0F5] border-2 border-dashed border-[#FF80AB] flex items-center justify-center text-[#FF80AB] clickable noselect">
                     <img v-if="newItem.image" :src="newItem.image" class="w-full h-full object-cover rounded-xl opacity-80">
                     <i v-else class="fa-solid fa-camera text-lg"></i>
                     <input type="file" accept="image/*" class="file-input" @change="handleImageUpload($event, newItem)">
@@ -309,33 +307,33 @@
                     </div>
                     <input v-model="newItem.note" placeholder="備註..." class="w-full text-xs text-[#FF4081]">
                 </div>
-                <button @click="addItem" class="w-10 h-10 rounded-full bg-[#FF4081] text-white shadow flex items-center justify-center shrink-0 active:bg-[#F50057]"><i class="fa-solid fa-plus"></i></button>
+                <button @click="addItem" class="w-10 h-10 rounded-full bg-[#FF4081] text-white shadow flex items-center justify-center shrink-0 active:bg-[#F50057] noselect"><i class="fa-solid fa-plus"></i></button>
             </div>
 
             <div class="space-y-3 pb-20">
                 <div v-for="(item, idx) in filteredList" :key="item.id" class="ppg-card p-0 relative overflow-hidden" :class="{'completed-card': item.checked}">
                     <div class="swipe-item">
                         <div class="swipe-content p-4 w-full flex gap-4 items-center">
-                            <button @click="toggleCheck(item)" class="text-xl shrink-0 transition-colors check-btn" :class="item.checked ? 'text-white' : 'text-[#FFCDD2]'">
+                            <button @click="toggleCheck(item)" class="text-xl shrink-0 transition-colors check-btn noselect" :class="item.checked ? 'text-white' : 'text-[#FFCDD2]'">
                                 <i :class="item.checked ? 'fa-solid fa-circle-check' : 'fa-regular fa-circle'"></i>
                             </button>
-                            <div class="relative w-16 h-16 bg-[#FFF0F5] rounded-xl border-2 border-[#FFCDD2] overflow-hidden clickable">
+                            <div class="relative w-16 h-16 bg-[#FFF0F5] rounded-xl border-2 border-[#FFCDD2] overflow-hidden clickable noselect">
                                 <img v-if="item.image" :src="item.image" class="w-full h-full object-cover" @click="viewImage(item.image)">
                                 <div v-else class="w-full h-full flex items-center justify-center text-[#FFCDD2]"><i class="fa-solid fa-image"></i></div>
                             </div>
                             <div class="flex-1 py-1 min-w-0">
                                 <div class="flex justify-between items-start">
                                     <h3 class="font-bold text-base leading-tight mb-1 truncate">{{ item.name }}</h3>
-                                    <span v-if="item.category" class="text-[9px] px-2 py-0.5 rounded-full border-2 font-bold whitespace-nowrap ml-2" :class="item.checked ? 'border-white text-white' : 'border-[#00BCD4] text-[#00BCD4] bg-[#E0F7FA]'">{{ item.category }}</span>
+                                    <span v-if="item.category" class="text-[9px] px-2 py-0.5 rounded-full border-2 font-bold whitespace-nowrap ml-2 noselect" :class="item.checked ? 'border-white text-white' : 'border-[#00BCD4] text-[#00BCD4] bg-[#E0F7FA]'">{{ item.category }}</span>
                                 </div>
                                 <p class="text-xs mb-2 truncate text-secondary">{{ item.note }}</p>
-                                <div class="flex gap-2">
+                                <div class="flex gap-2 noselect">
                                     <a v-if="listType === 'eat'" :href="getNearbyLink(item)" target="_blank" class="text-[10px] font-bold px-3 py-1.5 rounded-lg shadow-sm" :class="item.checked ? 'bg-white text-[#00BCD4]' : 'bg-[#00BCD4] text-white'">最近</a>
                                     <a v-if="listType === 'buy'" :href="getMapLink(item.name)" target="_blank" class="text-[10px] font-bold px-3 py-1.5 rounded-lg" :class="item.checked ? 'bg-white/20 text-white' : 'bg-[#FFF0F5] text-[#FF4081]'">搜尋</a>
                                 </div>
                             </div>
                         </div>
-                        <div class="swipe-action bg-[#FF4081] flex items-center justify-center cursor-pointer" @click="deleteItem(item)"><i class="fa-solid fa-trash text-white text-xl"></i></div>
+                        <div class="swipe-action bg-[#FF4081] flex items-center justify-center cursor-pointer noselect" @click="deleteItem(item)"><i class="fa-solid fa-trash text-white text-xl"></i></div>
                     </div>
                 </div>
             </div>
@@ -344,26 +342,26 @@
         <!-- 3. 匯率 (Currency) -->
         <div v-show="currentTab === 'currency'" class="px-5 pt-10 flex-1 overflow-y-auto hide-scrollbar">
             <div class="ppg-card p-8 mb-8 text-center bg-white shadow-xl">
-                <div class="text-[10px] tracking-[0.2em] text-[#FF80AB] uppercase mb-2 font-bold">Real-time Rate</div>
+                <div class="text-[10px] tracking-[0.2em] text-[#FF80AB] uppercase mb-2 font-bold noselect">Real-time Rate</div>
                 <div class="flex justify-center items-end gap-3 mb-3 pb-6 border-b-2 border-[#FFF0F5]">
-                    <span class="text-sm text-[#FF4081] font-bold">¥1 =</span>
+                    <span class="text-sm text-[#FF4081] font-bold noselect">¥1 =</span>
                     <input type="number" step="0.001" v-model="rate" class="w-32 text-center text-3xl font-black text-[#333] border-b-2 border-[#FFCDD2]">
-                    <span class="text-sm text-[#FF4081] font-bold">TWD</span>
-                    <button @click="fetchRate" class="ml-2 w-9 h-9 rounded-full bg-[#E0F7FA] text-[#00BCD4] flex items-center justify-center active:bg-cyan-100"><i class="fa-solid fa-arrows-rotate" :class="{'spin': isLoadingRate}"></i></button>
+                    <span class="text-sm text-[#FF4081] font-bold noselect">TWD</span>
+                    <button @click="fetchRate" class="ml-2 w-9 h-9 rounded-full bg-[#E0F7FA] text-[#00BCD4] flex items-center justify-center active:bg-cyan-100 noselect"><i class="fa-solid fa-arrows-rotate" :class="{'spin': isLoadingRate}"></i></button>
                 </div>
-                <div v-if="lastUpdated" class="text-[10px] text-[#4DD0E1] mb-6 flex justify-center items-center gap-1 font-bold"><i class="fa-regular fa-clock"></i> {{ lastUpdated }} (含2%)</div>
+                <div v-if="lastUpdated" class="text-[10px] text-[#4DD0E1] mb-6 flex justify-center items-center gap-1 font-bold noselect"><i class="fa-regular fa-clock"></i> {{ lastUpdated }} (含2%)</div>
                 <div class="space-y-5">
                     <div class="flex gap-4">
-                        <div class="flex-1"><label class="text-[10px] text-[#FF80AB] uppercase block mb-1 font-bold">JPY</label><input type="number" v-model="jpyAmount" class="w-full bg-[#FFF0F5] rounded-2xl py-4 text-center text-xl font-bold text-[#333]" placeholder="0"></div>
-                        <div class="flex-1"><label class="text-[10px] text-[#FF80AB] uppercase block mb-1 font-bold">TWD</label><div class="bg-[#8BC34A] text-white rounded-2xl py-4 text-center shadow-lg"><span class="text-xl font-bold">{{ Math.round(jpyAmount * rate).toLocaleString() }}</span></div></div>
+                        <div class="flex-1"><label class="text-[10px] text-[#FF80AB] uppercase block mb-1 font-bold noselect">JPY</label><input type="number" v-model="jpyAmount" class="w-full bg-[#FFF0F5] rounded-2xl py-4 text-center text-xl font-bold text-[#333]" placeholder="0"></div>
+                        <div class="flex-1"><label class="text-[10px] text-[#FF80AB] uppercase block mb-1 font-bold noselect">TWD</label><div class="bg-[#8BC34A] text-white rounded-2xl py-4 text-center shadow-lg"><span class="text-xl font-bold">{{ Math.round(jpyAmount * rate).toLocaleString() }}</span></div></div>
                     </div>
                     <div class="flex gap-2 items-center">
                         <input type="text" v-model="historyNote" placeholder="備註..." class="flex-1 bg-white border-2 border-[#FFCDD2] rounded-xl px-4 py-3 text-sm text-[#333]">
-                        <button @click="addHistory" class="bg-[#FF4081] text-white w-12 h-11 rounded-xl flex items-center justify-center shadow-md active:bg-[#F50057]"><i class="fa-solid fa-plus"></i></button>
+                        <button @click="addHistory" class="bg-[#FF4081] text-white w-12 h-11 rounded-xl flex items-center justify-center shadow-md active:bg-[#F50057] noselect"><i class="fa-solid fa-plus"></i></button>
                     </div>
                 </div>
             </div>
-            <h3 class="text-xs font-bold text-[#FF4081] mb-4 ml-2 uppercase tracking-wide">比價紀錄</h3>
+            <h3 class="text-xs font-bold text-[#FF4081] mb-4 ml-2 uppercase tracking-wide noselect">比價紀錄</h3>
             <div class="space-y-3 pb-20">
                 <div v-for="(rec, i) in currencyHistory" :key="rec.id" class="ppg-card p-0 overflow-hidden">
                     <div class="swipe-item">
@@ -371,7 +369,7 @@
                             <div><div class="text-base font-bold text-[#333] mb-0.5">{{ rec.note || '未命名' }}</div><div class="text-[10px] text-[#FF80AB]">{{ rec.date }}</div></div>
                             <div class="text-right"><div class="text-xs text-[#FF80AB] mb-0.5">¥ {{ Number(rec.jpy).toLocaleString() }}</div><div class="text-lg font-bold text-[#8BC34A]">NT$ {{ Number(rec.twd).toLocaleString() }}</div></div>
                         </div>
-                        <div class="swipe-action bg-[#FF4081] flex items-center justify-center cursor-pointer" @click="deleteHistory(i)"><i class="fa-solid fa-trash text-white"></i></div>
+                        <div class="swipe-action bg-[#FF4081] flex items-center justify-center cursor-pointer noselect" @click="deleteHistory(i)"><i class="fa-solid fa-trash text-white"></i></div>
                     </div>
                 </div>
             </div>
@@ -379,7 +377,7 @@
 
         <!-- 4. 分帳 -->
         <div v-show="currentTab === 'split'" class="px-5 pt-2 flex-1 overflow-y-auto hide-scrollbar">
-            <div class="bg-gradient-to-br from-[#4DD0E1] to-[#00ACC1] text-white p-6 rounded-3xl mb-8 shadow-xl">
+            <div class="bg-gradient-to-br from-[#4DD0E1] to-[#00ACC1] text-white p-6 rounded-3xl mb-8 shadow-xl noselect">
                 <!-- V43: 雙幣總覽 -->
                 <div class="flex justify-between gap-4">
                     <div class="flex-1 text-center border-r border-white/20">
@@ -416,7 +414,7 @@
                     <div class="flex flex-wrap gap-2">
                         <button v-for="p in travelers" :key="p" 
                             @click="toggleSplitter(p)"
-                            class="px-3 py-1 rounded-full text-xs font-bold border-2 transition-all"
+                            class="px-3 py-1 rounded-full text-xs font-bold border-2 transition-all noselect"
                             :class="newExpense.splitters.includes(p) ? 'bg-[#8BC34A] text-white border-[#8BC34A]' : 'bg-white text-[#ccc] border-[#eee]'">
                             {{ p }}
                         </button>
@@ -425,7 +423,6 @@
 
                 <div class="flex gap-3 mb-3">
                     <select v-model="newExpense.payer" class="bg-[#FFF0F5] px-4 py-3 rounded-xl text-sm font-bold text-[#333] w-1/3"><option disabled value="">誰付?</option><option v-for="p in travelers" :value="p">{{ p }}</option></select>
-                    <!-- V39/V43: 雙幣選擇 -->
                     <div class="flex-1 flex gap-2">
                         <input type="number" v-model="newExpense.amount" placeholder="金額" class="bg-[#FFF0F5] px-4 py-3 rounded-xl text-sm font-bold text-[#333] w-full">
                         <select v-model="newExpense.currency" class="bg-[#E0F7FA] px-2 rounded-xl text-xs font-bold text-[#00BCD4]"><option value="JPY">¥</option><option value="TWD">NT</option></select>
@@ -433,7 +430,7 @@
                 </div>
                 <div class="flex gap-3">
                     <input type="text" v-model="newExpense.desc" placeholder="項目" class="bg-[#FFF0F5] px-4 py-3 rounded-xl text-sm w-full">
-                    <button @click="addExpense" class="bg-[#8BC34A] text-white px-6 rounded-xl shadow-lg active:bg-[#689F38]"><i class="fa-solid fa-plus"></i></button>
+                    <button @click="addExpense" class="bg-[#8BC34A] text-white px-6 rounded-xl shadow-lg active:bg-[#689F38] noselect"><i class="fa-solid fa-plus"></i></button>
                 </div>
             </div>
             
@@ -448,13 +445,13 @@
                             <span class="text-[#ccc] font-normal ml-1">({{ exp.splitters ? exp.splitters.length : '全' }}人分)</span>
                         </div>
                     </div>
-                    <button @click="expenses.splice(i, 1)" class="text-[#FFCDD2] hover:text-[#FF4081]"><i class="fa-solid fa-trash"></i></button>
+                    <button @click="expenses.splice(i, 1)" class="text-[#FFCDD2] hover:text-[#FF4081] noselect"><i class="fa-solid fa-trash"></i></button>
                 </div>
             </div>
-             <div class="mb-6 px-4 py-4 border-2 border-dashed border-[#4DD0E1] rounded-2xl bg-[#E0F7FA]/30"><div class="text-[10px] text-[#00ACC1] uppercase mb-2 font-bold">Travelers</div><input v-model="travelerInput" @blur="updateTravelers" class="w-full bg-transparent font-bold text-[#333]" placeholder="我, 朋友A"></div>
+             <div class="mb-6 px-4 py-4 border-2 border-dashed border-[#4DD0E1] rounded-2xl bg-[#E0F7FA]/30"><div class="text-[10px] text-[#00ACC1] uppercase mb-2 font-bold noselect">Travelers</div><input v-model="travelerInput" @blur="updateTravelers" class="w-full bg-transparent font-bold text-[#333]" placeholder="我, 朋友A"></div>
         </div>
 
-        <nav class="fixed bottom-0 w-full glass-nav flex justify-around items-center pt-4 z-50">
+        <nav class="fixed bottom-0 w-full glass-nav flex justify-around items-center pt-4 z-50 noselect">
             <button @click="currentTab = 'schedule'" class="group w-1/4 flex flex-col items-center gap-1"><i class="fa-solid fa-map-location text-xl" :class="currentTab === 'schedule' ? 'text-[#FF4081]' : 'text-[#FFCDD2]'"></i><span class="text-[9px] font-bold uppercase">Plan</span></button>
             <button @click="currentTab = 'list'" class="group w-1/4 flex flex-col items-center gap-1"><i class="fa-solid fa-clipboard-check text-xl" :class="currentTab === 'list' ? 'text-[#4DD0E1]' : 'text-[#B2EBF2]'"></i><span class="text-[9px] font-bold uppercase">List</span></button>
             <button @click="currentTab = 'currency'" class="group w-1/4 flex flex-col items-center gap-1"><i class="fa-solid fa-calculator text-xl" :class="currentTab === 'currency' ? 'text-[#8BC34A]' : 'text-[#DCEDC8]'"></i><span class="text-[9px] font-bold uppercase">Rate</span></button>
@@ -463,24 +460,24 @@
 
         <div v-if="showSettings" class="modal-overlay" @click.self="showSettings = false">
             <div class="bg-white w-full max-w-sm rounded-3xl p-8 shadow-2xl border-4 border-[#FFCDD2] animate-fade relative">
-                <button @click="showSettings = false" class="absolute top-4 right-4 text-[#FFCDD2] hover:text-[#FF4081] p-2 text-2xl z-50"><i class="fa-solid fa-times"></i></button>
-                <h3 class="text-xl font-black text-[#FF4081] mb-6">設定</h3>
-                <div class="mb-6"><label class="text-xs font-bold text-[#FF4081] block mb-2">出發日</label><input type="date" v-model="startDate" class="w-full bg-[#FFF0F5] p-3 rounded-xl font-bold border-2 border-[#FFCDD2]"></div>
+                <button @click="showSettings = false" class="absolute top-4 right-4 text-[#FFCDD2] hover:text-[#FF4081] p-2 text-2xl z-50 noselect"><i class="fa-solid fa-times"></i></button>
+                <h3 class="text-xl font-black text-[#FF4081] mb-6 noselect">設定</h3>
+                <div class="mb-6"><label class="text-xs font-bold text-[#FF4081] block mb-2 noselect">出發日</label><input type="date" v-model="startDate" class="w-full bg-[#FFF0F5] p-3 rounded-xl font-bold border-2 border-[#FFCDD2]"></div>
                 <div class="bg-[#FFF0F5] p-5 rounded-2xl mb-4 border-2 border-[#FFCDD2]">
-                    <h4 class="text-sm font-bold text-[#FF4081] mb-3">備份</h4>
-                    <button @click="saveManualBackup" class="w-full bg-[#FF4081] text-white py-3 rounded-xl text-xs font-bold mb-3 shadow-md">💾 建立備份</button>
-                    <button @click="loadManualBackup" class="w-full bg-white border-2 border-[#FF4081] text-[#FF4081] py-3 rounded-xl text-xs font-bold mb-3">📂 還原備份</button>
-                    <button @click="exportData" class="w-full bg-[#4DD0E1] text-white py-3 rounded-xl text-xs font-bold mb-2 shadow-md">📤 產生分享代碼</button>
+                    <h4 class="text-sm font-bold text-[#FF4081] mb-3 noselect">備份</h4>
+                    <button @click="saveManualBackup" class="w-full bg-[#FF4081] text-white py-3 rounded-xl text-xs font-bold mb-3 shadow-md noselect">💾 建立備份</button>
+                    <button @click="loadManualBackup" class="w-full bg-white border-2 border-[#FF4081] text-[#FF4081] py-3 rounded-xl text-xs font-bold mb-3 noselect">📂 還原備份</button>
+                    <button @click="exportData" class="w-full bg-[#4DD0E1] text-white py-3 rounded-xl text-xs font-bold mb-2 shadow-md noselect">📤 產生分享代碼</button>
                     <div class="flex gap-2">
                          <input v-model="importString" placeholder="貼上代碼..." class="flex-1 bg-white px-3 py-2 rounded-lg text-xs text-[#333] border border-[#FFCDD2]">
-                         <button @click="importData" class="bg-[#4DD0E1] text-white px-3 py-2 rounded-lg text-xs font-bold whitespace-nowrap">📥 匯入</button>
+                         <button @click="importData" class="bg-[#4DD0E1] text-white px-3 py-2 rounded-lg text-xs font-bold whitespace-nowrap noselect">📥 匯入</button>
                     </div>
                 </div>
                 <div class="bg-white border-2 border-[#4DD0E1] p-5 rounded-2xl mb-6">
-                    <h4 class="text-sm font-bold text-[#4DD0E1] mb-2"><i class="fa-solid fa-truck-medical mr-2"></i> 資料救援</h4>
-                    <button @click="recoverOldData" class="w-full bg-[#4DD0E1] text-white py-3 rounded-xl text-xs font-bold active:scale-95 transition shadow-md">📂 嘗試從舊版救援資料</button>
+                    <h4 class="text-sm font-bold text-[#4DD0E1] mb-2 noselect"><i class="fa-solid fa-truck-medical mr-2"></i> 資料救援</h4>
+                    <button @click="recoverOldData" class="w-full bg-[#4DD0E1] text-white py-3 rounded-xl text-xs font-bold active:scale-95 transition shadow-md noselect">📂 嘗試從舊版救援資料</button>
                 </div>
-                <button @click="resetData" class="w-full text-[#FFCDD2] text-xs py-4 font-bold">清除資料重置</button>
+                <button @click="resetData" class="w-full text-[#FFCDD2] text-xs py-4 font-bold noselect">清除資料重置</button>
             </div>
         </div>
 
@@ -664,13 +661,6 @@
                 const addHistory = () => { if(!jpyAmount.value) return; currencyHistory.value.unshift({ id: Date.now(), jpy: jpyAmount.value, twd: Math.round(jpyAmount.value * rate.value), note: historyNote.value, date: new Date().toLocaleDateString() }); historyNote.value = ''; };
                 const deleteHistory = (idx) => currencyHistory.value.splice(idx, 1);
 
-                // --- V43 分帳邏輯 ---
-                const toggleSplitter = (person) => {
-                    const idx = newExpense.value.splitters.indexOf(person);
-                    if (idx > -1) newExpense.value.splitters.splice(idx, 1);
-                    else newExpense.value.splitters.push(person);
-                };
-
                 const addExpense = () => {
                     if (newExpense.value.amount && newExpense.value.splitters.length > 0) {
                         expenses.value.unshift({ 
@@ -698,10 +688,10 @@
 
                 const saveManualBackup = () => { const data = { itinerary: itinerary.value, wishlist: wishlist.value, rate: rate.value, expenses: expenses.value, travelerInput: travelerInput.value, lastUpdated: lastUpdated.value, currencyHistory: currencyHistory.value, foodMapUrl: foodMapUrl.value, shopMapUrl: shopMapUrl.value, startDate: startDate.value }; try { localStorage.setItem('tokyoTrip_ManualBackup', JSON.stringify(data)); alert('備份成功'); } catch(e) { alert('備份失敗(空間不足)'); } };
                 const loadManualBackup = () => { const backup = localStorage.getItem('tokyoTrip_ManualBackup'); if(backup && confirm('還原備份？')) { const data = JSON.parse(backup); itinerary.value = data.itinerary; wishlist.value = data.wishlist; rate.value = data.rate; expenses.value = data.expenses; travelerInput.value = data.travelerInput; lastUpdated.value = data.lastUpdated; currencyHistory.value = data.currencyHistory; foodMapUrl.value = data.foodMapUrl; shopMapUrl.value = data.shopMapUrl; startDate.value = data.startDate; alert('成功'); nextTick(() => initSortable()); } else if(!backup) { alert('無備份'); } };
-                const resetData = () => { if(confirm('警告：刪除所有資料！')) { localStorage.removeItem('tokyoTrip_V44_Final'); location.reload(); } };
+                const resetData = () => { if(confirm('警告：刪除所有資料！')) { localStorage.removeItem('tokyoTrip_V45_Final'); location.reload(); } };
 
                 const recoverOldData = () => {
-                    const legacyKeys = ['tokyoTrip_V43_Final', 'tokyoTrip_V42_Final', 'tokyoTrip_V41_Final'];
+                    const legacyKeys = ['tokyoTrip_V44_Final', 'tokyoTrip_V43_Final', 'tokyoTrip_V42_Final', 'tokyoTrip_V41_Final'];
                     let found = false;
                     for (const key of legacyKeys) {
                         const old = localStorage.getItem(key);
@@ -735,7 +725,7 @@
                     } catch (e) { alert('代碼錯誤'); }
                 };
 
-                const KEY = 'tokyoTrip_V44_Final';
+                const KEY = 'tokyoTrip_V45_Final';
                 onMounted(() => {
                     document.getElementById('panic-btn').style.display = 'none';
                     document.getElementById('app').classList.remove('hidden');
@@ -772,5 +762,3 @@
     </script>
 </body>
 </html>
-
-
