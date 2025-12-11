@@ -5,24 +5,37 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Tokyo Trip V45</title>
+    <title>Tokyo Trip V46</title>
     
+    <!-- 0. 錯誤捕捉 (最優先) -->
+    <script>
+        window.onerror = function(msg, url, line, col, error) {
+            var el = document.getElementById('error-display');
+            if(el) {
+                el.style.display = 'block';
+                el.innerHTML += "🔴 " + msg + "<br>";
+            }
+            // 強制顯示 App 內容
+            if(document.getElementById('app')) document.getElementById('app').style.display = 'flex';
+        };
+    </script>
+
     <!-- 1. 樣式庫 -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <!-- 2. 核心邏輯庫 -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.3.4/vue.global.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+    <!-- 2. 核心邏輯庫 (使用 unpkg，通常相容性最好) -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/sortablejs@1.15.0/Sortable.min.js"></script>
 
     <style>
         /* --- 飛天小女警配色 --- */
         :root {
-            --bg-color: #FFF0F5;      /* 淺粉紅背景 */
-            --primary: #333333;       /* 深灰文字 */
-            --blossom: #FF4081;       /* 花花粉 (主色) */
-            --bubbles: #00BCD4;       /* 泡泡藍 (輔助) */
-            --buttercup: #8BC34A;     /* 毛毛綠 (完成/金錢) */
+            --bg-color: #FFF0F5;
+            --primary: #333333;
+            --blossom: #FF4081;
+            --bubbles: #00BCD4;
+            --buttercup: #8BC34A;
         }
 
         body {
@@ -31,60 +44,34 @@
             color: var(--primary);
             padding-bottom: 120px;
             -webkit-tap-highlight-color: transparent;
-            /* V45: 移除全域禁止選取，解決貼上問題 */
+            /* V46: 允許全域選取，解決輸入框問題 */
+            user-select: auto; 
         }
         .safe-top { padding-top: max(20px, env(safe-area-inset-top)); }
         
-        /* 針對不需要選取的 UI 元素手動加上禁止 */
-        .noselect {
-            -webkit-user-select: none;
-            user-select: none;
-        }
-
-        /* 確保輸入框絕對原生，無任何干擾 */
+        /* 輸入框強制解鎖 */
         input, textarea, select {
-            -webkit-user-select: text !important;
             user-select: text !important;
+            -webkit-user-select: text !important;
             -webkit-touch-callout: default !important;
+            pointer-events: auto !important;
+            cursor: auto !important;
             outline: none; 
             background: transparent;
         }
 
+        /* 針對不需要選取的 UI 元素鎖定 */
+        .noselect { user-select: none; -webkit-user-select: none; }
+
         /* 卡片樣式 */
-        .ppg-card {
-            background-color: white;
-            border-radius: 20px;
-            border: 3px solid white;
-            box-shadow: 0 6px 16px rgba(255, 64, 129, 0.15);
-            transition: transform 0.1s;
-        }
+        .ppg-card { background-color: white; border-radius: 20px; border: 3px solid white; box-shadow: 0 6px 16px rgba(255, 64, 129, 0.15); transition: transform 0.1s; }
         .ppg-card:active { transform: scale(0.98); }
-        
-        /* 完成樣式 (綠底) */
-        .completed-card {
-            background: #8BC34A !important;
-            color: white !important;
-            border-color: #8BC34A !important;
-        }
+        .completed-card { background: #8BC34A !important; color: white !important; border-color: #8BC34A !important; }
         .completed-card input { color: white !important; }
         .completed-card .text-secondary { color: rgba(255,255,255,0.8) !important; }
-        .completed-card i { color: white !important; }
         
-        /* 住宿卡片 */
-        .hotel-card {
-            background: linear-gradient(135deg, #FF4081 0%, #F50057 100%);
-            color: white;
-            border-radius: 20px;
-            box-shadow: 0 8px 20px rgba(255, 64, 129, 0.3);
-        }
-
-        /* 導航列 */
-        .glass-nav {
-            background: rgba(255, 255, 255, 0.95);
-            border-top: 1px solid rgba(255, 64, 129, 0.1);
-            padding-bottom: env(safe-area-inset-bottom);
-            box-shadow: 0 -4px 10px rgba(0,0,0,0.05);
-        }
+        .hotel-card { background: linear-gradient(135deg, #FF4081 0%, #F50057 100%); color: white; border-radius: 20px; box-shadow: 0 8px 20px rgba(255, 64, 129, 0.3); }
+        .glass-nav { background: rgba(255, 255, 255, 0.95); border-top: 1px solid rgba(255, 64, 129, 0.1); padding-bottom: env(safe-area-inset-bottom); box-shadow: 0 -4px 10px rgba(0,0,0,0.05); }
         
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .file-input { position: absolute; width: 100%; height: 100%; opacity: 0; cursor: pointer; z-index: 10; left: 0; top: 0;}
@@ -96,38 +83,44 @@
         
         select { padding-right: 0 !important; text-align-last: center; }
 
-        /* 緊急救援按鈕 */
-        #panic-btn {
-            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            background: white; border: 4px solid #FF4081; color: #FF4081;
-            padding: 30px; border-radius: 20px; font-weight: bold; z-index: 99999;
-            text-align: center; width: 80%; box-shadow: 0 20px 50px rgba(0,0,0,0.2);
-        }
+        /* 錯誤顯示區 */
+        #error-display { display: none; position: fixed; top: 0; left: 0; width: 100%; background: rgba(0,0,0,0.8); color: #FF4081; padding: 20px; z-index: 99999; font-size: 12px; }
         
-        [v-cloak] { display: none; }
+        /* 救援按鈕 */
+        #panic-btn { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1; text-align: center; width: 80%; pointer-events: none; opacity: 0; transition: opacity 1s; }
     </style>
 
     <script>
         function manualReset() {
-            if(confirm('這將清除資料並重整，修復白屏問題。確定嗎？')) {
-                localStorage.clear();
-                window.location.reload();
-            }
+            if(confirm('強制清除資料並重整？')) { localStorage.clear(); window.location.reload(); }
         }
+        // 3秒後若 Vue 沒蓋掉這個按鈕，就顯示出來
+        setTimeout(function(){
+            var btn = document.getElementById('panic-btn');
+            if(btn) {
+                btn.style.opacity = '1';
+                btn.style.pointerEvents = 'auto';
+            }
+        }, 3000);
     </script>
 </head>
 <body class="safe-top h-screen flex flex-col">
 
+    <!-- 錯誤訊息顯示 -->
+    <div id="error-display"></div>
+
+    <!-- 靜態救援按鈕 -->
     <div id="panic-btn">
-        <div class="text-4xl mb-4">⚠️</div>
-        <div class="text-lg mb-2">App 啟動失敗？</div>
-        <div class="text-xs text-gray-400 mb-6">若只看到此畫面代表資料可能損毀</div>
-        <button onclick="manualReset()" class="bg-[#FF4081] text-white px-8 py-3 rounded-full font-bold shadow-lg text-sm">
-            點此強制重置
-        </button>
+        <div class="bg-white border-4 border-[#FF4081] p-6 rounded-3xl shadow-xl">
+            <h2 class="text-xl font-bold text-[#FF4081] mb-2">App 啟動失敗？</h2>
+            <p class="text-xs text-gray-400 mb-4">若畫面卡住，請點下方按鈕重置</p>
+            <button onclick="manualReset()" class="bg-[#FF4081] text-white px-6 py-3 rounded-full font-bold shadow-lg">
+                強制重置
+            </button>
+        </div>
     </div>
 
-    <div id="app" v-cloak class="h-full flex flex-col relative z-10 bg-[#FFF0F5]">
+    <div id="app" class="h-full flex flex-col relative z-10 bg-[#FFF0F5]">
 
         <!-- Header -->
         <header class="px-6 pt-4 pb-4 bg-[#FFF0F5] sticky top-0 z-30 shadow-sm noselect">
@@ -136,7 +129,7 @@
                     <h1 class="text-3xl font-black tracking-wide text-[#FF4081]">
                         TOKYO <i class="fa-solid fa-heart text-[#00BCD4]"></i>
                     </h1>
-                    <p class="text-[10px] text-[#00BCD4] font-bold tracking-widest uppercase">Powerpuff Trip V45</p>
+                    <p class="text-[10px] text-[#00BCD4] font-bold tracking-widest uppercase">Powerpuff Trip V46</p>
                 </div>
                 <button @click="showSettings = true" class="w-10 h-10 rounded-full bg-white shadow text-[#FF4081] flex items-center justify-center active:bg-gray-100">
                     <i class="fa-solid fa-gear"></i>
@@ -259,7 +252,7 @@
                 <button @click="listType = 'eat'" :class="listType === 'eat' ? 'bg-[#00BCD4] text-white shadow-md' : 'text-[#00BCD4]'" class="flex-1 py-3 rounded-xl text-xs font-bold transition-all">美食</button>
             </div>
 
-            <!-- 快速連結 (雙地圖) -->
+            <!-- 快速連結區 (雙地圖) -->
             <div class="mb-6 grid grid-cols-1 gap-4">
                 <div class="ppg-card p-4 border-[#00BCD4] !border-l-4">
                     <div class="flex items-center justify-between mb-2 noselect">
@@ -423,6 +416,7 @@
 
                 <div class="flex gap-3 mb-3">
                     <select v-model="newExpense.payer" class="bg-[#FFF0F5] px-4 py-3 rounded-xl text-sm font-bold text-[#333] w-1/3"><option disabled value="">誰付?</option><option v-for="p in travelers" :value="p">{{ p }}</option></select>
+                    <!-- V39/V43: 雙幣選擇 -->
                     <div class="flex-1 flex gap-2">
                         <input type="number" v-model="newExpense.amount" placeholder="金額" class="bg-[#FFF0F5] px-4 py-3 rounded-xl text-sm font-bold text-[#333] w-full">
                         <select v-model="newExpense.currency" class="bg-[#E0F7FA] px-2 rounded-xl text-xs font-bold text-[#00BCD4]"><option value="JPY">¥</option><option value="TWD">NT</option></select>
@@ -501,8 +495,8 @@
 
     </div>
 
-    <script type="module">
-        import { createApp, ref, computed, watch, onMounted, nextTick } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.js';
+    <script>
+        const { createApp, ref, computed, watch, onMounted, nextTick } = Vue;
 
         createApp({
             setup() {
