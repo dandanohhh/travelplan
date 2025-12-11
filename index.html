@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Tokyo Green Trip V13</title>
+    <title>Tokyo Green Trip V14</title>
     
     <!-- CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -67,18 +67,29 @@
         .swipe-action { min-width: 80px; scroll-snap-align: end; }
 
         .route-connector { position: relative; margin-left: 28px; padding-left: 20px; border-left: 2px dashed #CAD2C5; padding-top: 12px; padding-bottom: 12px; }
-        #loading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: flex; justify-content: center; items-center; background: #F4F7F5; z-index: 9999; color: #52796F; }
+        
+        /* 進度條載入畫面 */
+        #loading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; items-center; background: #F4F7F5; z-index: 9999; color: #52796F; transition: opacity 0.5s; }
+        .progress-bar-container { width: 200px; height: 6px; background: #E8ECE9; border-radius: 99px; overflow: hidden; margin-top: 15px; }
+        .progress-bar-fill { height: 100%; background: #52796F; width: 0%; transition: width 0.1s linear; }
         .spin { animation: spin 1s linear infinite; }
         @keyframes spin { 100% { transform: rotate(360deg); } }
+        .fade-out { opacity: 0; pointer-events: none; }
     </style>
 </head>
 <body class="safe-top h-screen flex flex-col">
 
+    <!-- 進度條 Loading 畫面 -->
     <div id="loading">
         <div class="text-center">
-            <i class="fa-solid fa-cloud-arrow-down fa-bounce text-3xl mb-3"></i><br>
-            資料繼承中...
+            <i class="fa-solid fa-plane-up fa-bounce text-4xl mb-4"></i>
+            <div class="text-sm font-bold tracking-widest text-[#2F3E46] mb-1">TOKYO TRIP</div>
+            <div class="text-[10px] text-[#84A98C] h-4" id="loading-text">準備中...</div>
         </div>
+        <div class="progress-bar-container">
+            <div id="progress-fill" class="progress-bar-fill"></div>
+        </div>
+        <div class="text-[10px] text-[#52796F] mt-2 font-mono" id="progress-num">0%</div>
     </div>
 
     <div id="app" class="h-full hidden">
@@ -184,13 +195,11 @@
 
         <!-- 2. 清單 (List) -->
         <div v-if="currentTab === 'list'" class="px-5 pt-2 animate-fade">
-            <!-- 分類切換 -->
             <div class="flex p-1 bg-white rounded-xl border border-[#E8ECE9] mb-4">
                 <button @click="listType = 'buy'" :class="listType === 'buy' ? 'bg-[#2F3E46] text-white shadow-md' : 'text-[#84A98C]'" class="flex-1 py-2 rounded-lg text-xs font-bold transition-all"><i class="fa-solid fa-bag-shopping mr-1"></i> 購物</button>
                 <button @click="listType = 'eat'" :class="listType === 'eat' ? 'bg-[#52796F] text-white shadow-md' : 'text-[#84A98C]'" class="flex-1 py-2 rounded-lg text-xs font-bold transition-all"><i class="fa-solid fa-utensils mr-1"></i> 美食</button>
             </div>
 
-            <!-- Google Map List (美食限定) -->
             <div v-if="listType === 'eat'" class="mb-4 animate-fade">
                 <div class="gmap-card p-4 rounded-2xl shadow-sm">
                     <div class="flex items-center justify-between mb-2">
@@ -204,7 +213,6 @@
                 </div>
             </div>
 
-            <!-- 篩選器 (購物限定) -->
             <div v-if="listType === 'buy'" class="flex justify-end mb-2">
                 <button @click="showUncheckedOnly = !showUncheckedOnly" class="text-xs font-bold flex items-center gap-1" :class="showUncheckedOnly ? 'text-[#52796F]' : 'text-[#CAD2C5]'">
                     <i :class="showUncheckedOnly ? 'fa-solid fa-filter' : 'fa-solid fa-filter-circle-xmark'"></i>
@@ -212,7 +220,6 @@
                 </button>
             </div>
 
-            <!-- 新增輸入區 -->
             <div class="green-card p-4 rounded-2xl mb-6 flex gap-3 items-center">
                 <div class="relative w-12 h-12 rounded-xl bg-[#F4F7F5] border border-dashed border-[#84A98C] flex items-center justify-center text-[#84A98C] overflow-hidden">
                     <img v-if="newItem.image" :src="newItem.image" class="w-full h-full object-cover opacity-80">
@@ -229,7 +236,6 @@
                 <button @click="addItem" class="w-10 h-10 rounded-full bg-[#2F3E46] text-white shadow-lg flex items-center justify-center shrink-0"><i class="fa-solid fa-plus"></i></button>
             </div>
 
-            <!-- 列表 -->
             <div class="space-y-3">
                 <div v-for="(item, idx) in filteredList" :key="item.id" 
                     class="green-card p-0 rounded-2xl relative transition-all overflow-hidden" 
@@ -249,7 +255,6 @@
                                     <span v-if="item.category" class="text-[9px] px-1.5 py-0.5 rounded border opacity-70 whitespace-nowrap ml-1" :class="item.checked ? 'border-white text-white' : 'border-[#84A98C] text-[#84A98C]'">{{ item.category }}</span>
                                 </div>
                                 <p class="text-xs mb-2 truncate text-secondary" :class="item.checked ? 'text-white/80' : 'text-[#84A98C]'">{{ item.note }}</p>
-                                
                                 <div class="flex gap-2">
                                     <a v-if="listType === 'eat'" :href="getNearbyLink(item)" target="_blank" class="text-[10px] font-bold px-2 py-1 rounded shadow-sm transition-colors"
                                        :class="item.checked ? 'bg-white text-[#52796F]' : 'bg-[#52796F] text-white hover:bg-[#2F3E46]'">
@@ -273,7 +278,7 @@
             </div>
         </div>
 
-        <!-- 3. 匯率 (Currency) - 歷史紀錄版 -->
+        <!-- 3. 匯率 (Currency) -->
         <div v-if="currentTab === 'currency'" class="px-5 pt-10">
             <div class="green-card p-6 rounded-3xl mb-6 text-center bg-white shadow-xl shadow-[#52796F]/10">
                 <div class="text-[10px] tracking-widest text-[#84A98C] uppercase mb-1">Exchange Rate</div>
@@ -373,7 +378,6 @@
             </div>
         </div>
 
-        <!-- 底部導航 -->
         <nav class="fixed bottom-0 w-full glass-nav flex justify-around items-center pt-3 z-50">
             <button @click="currentTab = 'schedule'" class="group" :class="currentTab === 'schedule' ? 'text-[#2F3E46]' : 'text-[#CAD2C5]'">
                 <i class="fa-solid fa-map-location text-xl mb-1 transition-colors"></i>
@@ -393,14 +397,13 @@
             </button>
         </nav>
 
-        <!-- 設定 Modal (恢復匯出匯入) -->
         <div v-if="showSettings" class="modal-overlay" @click.self="showSettings = false">
             <div class="bg-white w-full max-w-sm rounded-2xl p-6 shadow-2xl relative animate-fade">
                 <button @click="showSettings = false" class="absolute top-4 right-4 text-[#CAD2C5]"><i class="fa-solid fa-times text-xl"></i></button>
-                <h3 class="text-xl font-bold text-[#2F3E46] mb-4">設定</h3>
+                <h3 class="text-xl font-bold text-[#2F3E46] mb-4">設定 (V14)</h3>
                 
                 <div class="bg-[#F4F7F5] p-4 rounded-xl mb-6">
-                    <h4 class="text-sm font-bold text-[#52796F] mb-2"><i class="fa-solid fa-share-nodes mr-1"></i> 資料轉移 (不含匯率紀錄)</h4>
+                    <h4 class="text-sm font-bold text-[#52796F] mb-2"><i class="fa-solid fa-share-nodes mr-1"></i> 資料轉移 (無匯率紀錄)</h4>
                     <button @click="exportData" class="w-full bg-[#2F3E46] text-white py-3 rounded-lg text-xs font-bold mb-2"><i class="fa-solid fa-copy mr-1"></i> 複製資料代碼</button>
                     <div class="flex gap-2">
                         <input v-model="importString" placeholder="貼上代碼..." class="flex-1 bg-white px-3 py-2 rounded-lg text-xs text-[#2F3E46] border border-[#E8ECE9]">
@@ -411,7 +414,6 @@
             </div>
         </div>
 
-        <!-- 圖片 Modal -->
         <div v-if="viewingImage" class="modal-overlay" @click.self="viewingImage = null">
             <div class="relative max-w-lg w-full p-4">
                 <img :src="viewingImage" class="w-full rounded-lg shadow-2xl">
@@ -432,7 +434,6 @@
                 const importString = ref('');
                 const viewingImage = ref(null);
                 
-                // 1. Schedule
                 const currentDayIndex = ref(0);
                 const itinerary = ref([{ events: [{ id: Date.now(), time: '10:00', location: '成田機場', transport: 'train', note: '領取 JR Pass', image: null }], accommodation: { name: '', note: '', image: null } }]);
                 let sortableInstance = null;
@@ -475,11 +476,10 @@
                     return `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(curr.location)}&destination=${encodeURIComponent(next.location)}&travelmode=${mode}`;
                 };
 
-                // 2. Wishlist
                 const listType = ref('buy'); 
                 const wishlist = ref([]);
                 const newItem = ref({ name: '', note: '', category: '', image: null });
-                const showUncheckedOnly = ref(false); // 購物篩選器
+                const showUncheckedOnly = ref(false);
                 
                 const savedMapUrl = ref('');
                 const tempMapUrl = ref('');
@@ -519,7 +519,7 @@
                     wishlist.value.unshift({ 
                         id: Date.now(),
                         type: listType.value, name: newItem.value.name, note: newItem.value.note, 
-                        category: newItem.value.category, // 新增分類
+                        category: newItem.value.category, 
                         image: newItem.value.image, checked: false 
                     });
                     newItem.value = { name: '', note: '', category: '', image: null };
@@ -542,12 +542,10 @@
                     viewingImage.value = null; 
                 };
                 const getNearbyLink = (item) => {
-                    // 美食清單連動: 如果有分類就用分類查，不然用名稱
                     const query = item.category ? `${item.name} ${item.category}` : item.name;
                     return `https://www.google.com/maps/search/${encodeURIComponent(query + ' near me')}`;
                 };
 
-                // 3. Currency (History Mode) - API
                 const rate = ref(0.215); 
                 const jpyAmount = ref('');
                 const isLoadingRate = ref(false);
@@ -562,7 +560,7 @@
                         const data = await res.json();
                         rate.value = (data.rates.TWD * 1.02).toFixed(3);
                         lastUpdated.value = new Date().toLocaleTimeString('zh-TW', {hour: '2-digit', minute:'2-digit'});
-                    } catch (e) { alert('更新失敗，請檢查網路'); } finally { isLoadingRate.value = false; }
+                    } catch (e) { alert('更新失敗'); } finally { isLoadingRate.value = false; }
                 };
 
                 const addHistory = () => {
@@ -579,7 +577,6 @@
                 
                 const deleteHistory = (idx) => currencyHistory.value.splice(idx, 1);
 
-                // 4. Split
                 const travelerInput = ref('我, 旅伴');
                 const travelers = computed(() => travelerInput.value.split(/[,，]/).map(t => t.trim()).filter(t => t));
                 const expenses = ref([]);
@@ -596,27 +593,51 @@
                     return Math.round(paid - (totalExpense.value / travelers.value.length));
                 };
 
-                // Storage & Migration Logic (Key: V13)
-                onMounted(() => {
-                    const keyV13 = 'tokyoTripV13';
-                    const keyV12 = 'tokyoTripV12';
-                    const savedData = localStorage.getItem(keyV13);
+                onMounted(async () => {
+                    const keyCurrent = 'tokyoTripV14';
+                    const keyLegacy = 'tokyoTripV13';
+                    const savedData = localStorage.getItem(keyCurrent);
                     
                     if (savedData) {
                         loadData(JSON.parse(savedData));
                     } else {
-                        // Migration: Check V12
-                        const oldData = localStorage.getItem(keyV12);
+                        const oldData = localStorage.getItem(keyLegacy);
                         if (oldData) {
-                            console.log("Migrating from V12...");
+                            // 模擬資料繼承的進度條
+                            await simulateProgress();
                             loadData(JSON.parse(oldData));
                         }
                     }
                     
-                    document.getElementById('loading').style.display = 'none';
-                    document.getElementById('app').classList.remove('hidden');
-                    nextTick(() => initSortable());
+                    const loader = document.getElementById('loading');
+                    loader.classList.add('fade-out');
+                    setTimeout(() => {
+                        loader.style.display = 'none';
+                        document.getElementById('app').classList.remove('hidden');
+                        nextTick(() => initSortable());
+                    }, 500);
                 });
+
+                const simulateProgress = () => {
+                    return new Promise(resolve => {
+                        const fill = document.getElementById('progress-fill');
+                        const num = document.getElementById('progress-num');
+                        const text = document.getElementById('loading-text');
+                        let p = 0;
+                        text.innerText = "發現舊資料，正在繼承...";
+                        const intv = setInterval(() => {
+                            p += Math.floor(Math.random() * 15) + 5;
+                            if (p > 100) p = 100;
+                            fill.style.width = p + '%';
+                            num.innerText = p + '%';
+                            if (p === 100) {
+                                clearInterval(intv);
+                                text.innerText = "繼承完成！";
+                                setTimeout(resolve, 300);
+                            }
+                        }, 100);
+                    });
+                };
 
                 const loadData = (data) => {
                     try {
@@ -628,12 +649,12 @@
                         lastUpdated.value = data.lastUpdated || '';
                         currencyHistory.value = data.currencyHistory || [];
                         savedMapUrl.value = data.savedMapUrl || '';
-                    } catch(e) { console.error(e); }
+                    } catch(e) {}
                 };
 
                 watch([itinerary, wishlist, rate, expenses, travelerInput, lastUpdated, currencyHistory, savedMapUrl], () => {
                     try {
-                        localStorage.setItem('tokyoTripV13', JSON.stringify({
+                        localStorage.setItem('tokyoTripV14', JSON.stringify({
                             itinerary: itinerary.value, wishlist: wishlist.value,
                             rate: rate.value, expenses: expenses.value, 
                             travelerInput: travelerInput.value, lastUpdated: lastUpdated.value,
@@ -642,15 +663,13 @@
                     } catch (e) { alert('儲存空間已滿，請刪除部分照片'); }
                 }, { deep: true });
 
-                const resetData = () => { if(confirm('警告：刪除所有資料！')) { localStorage.removeItem('tokyoTripV13'); location.reload(); } }
+                const resetData = () => { if(confirm('警告：刪除所有資料！')) { localStorage.removeItem('tokyoTripV14'); location.reload(); } }
 
-                // Export: Exclude Currency History
                 const exportData = () => {
                     const data = JSON.stringify({
                         itinerary: itinerary.value, wishlist: wishlist.value,
                         rate: rate.value, expenses: expenses.value, 
                         travelerInput: travelerInput.value, savedMapUrl: savedMapUrl.value
-                        // Exclude currencyHistory & lastUpdated
                     });
                     const encoded = btoa(unescape(encodeURIComponent(data)));
                     navigator.clipboard.writeText(encoded).then(() => alert('代碼已複製！')).catch(() => alert('複製失敗'));
@@ -662,13 +681,11 @@
                         const decoded = decodeURIComponent(escape(atob(importString.value)));
                         const data = JSON.parse(decoded);
                         if(confirm('確定覆蓋資料？(私人匯率紀錄不會被覆蓋)')) {
-                            // Only overwrite shared data
                             itinerary.value = data.itinerary || itinerary.value;
                             wishlist.value = data.wishlist || [];
                             expenses.value = data.expenses || [];
                             travelerInput.value = data.travelerInput || '我, 旅伴';
                             savedMapUrl.value = data.savedMapUrl || '';
-                            // Keep current rate & currencyHistory
                             alert('成功！'); showSettings.value = false; importString.value = '';
                             nextTick(() => initSortable());
                         }
