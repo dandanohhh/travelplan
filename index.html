@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Tokyo Trip">
     <title>Tokyo Trip</title>
     
     <!-- CDN -->
@@ -15,51 +14,21 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
-        :root {
-            --bg-color: #F4F7F5;
-            --primary: #2F3E46; 
-            --accent: #52796F;  
-            --light: #84A98C;   
-        }
-        body {
-            font-family: -apple-system, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--primary);
-            padding-bottom: 110px;
-            -webkit-tap-highlight-color: transparent;
-            user-select: none;
-        }
+        :root { --bg-color: #F4F7F5; --primary: #2F3E46; --accent: #52796F; --light: #84A98C; }
+        body { font-family: -apple-system, sans-serif; background-color: var(--bg-color); color: var(--primary); padding-bottom: 110px; -webkit-tap-highlight-color: transparent; user-select: none; }
         .safe-top { padding-top: env(safe-area-inset-top); }
         
-        .green-card {
-            background-color: white;
-            border: 1px solid rgba(82, 121, 111, 0.15);
-            box-shadow: 0 2px 10px rgba(0,0,0,0.03);
-            transition: all 0.2s;
-        }
-        
-        /* 購物清單完成樣式 */
-        .completed-card {
-            background-color: #52796F !important;
-            color: white !important;
-            border-color: #52796F !important;
-        }
+        .green-card { background-color: white; border: 1px solid rgba(82, 121, 111, 0.15); box-shadow: 0 2px 10px rgba(0,0,0,0.03); transition: all 0.2s; }
+        .completed-card { background-color: #52796F !important; color: white !important; border-color: #52796F !important; }
         .completed-card input { color: white !important; }
         .completed-card .text-secondary { color: rgba(255,255,255,0.8) !important; }
         .completed-card .check-btn { color: white !important; }
         
         .sortable-ghost { opacity: 0.4; background: #E8ECE9; }
         .sortable-drag { background: white; transform: scale(1.02); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
-
         .gmap-card { background: white; border: 1px solid #E8ECE9; border-left: 4px solid #4285F4; }
         .hotel-card { background: linear-gradient(135deg, #2F3E46 0%, #354F52 100%); color: white; box-shadow: 0 8px 20px rgba(47, 62, 70, 0.2); }
-
-        .glass-nav {
-            background: rgba(244, 247, 245, 0.96);
-            border-top: 1px solid rgba(82, 121, 111, 0.1);
-            backdrop-filter: blur(12px);
-            padding-bottom: env(safe-area-inset-bottom);
-        }
+        .glass-nav { background: rgba(244, 247, 245, 0.96); border-top: 1px solid rgba(82, 121, 111, 0.1); backdrop-filter: blur(12px); padding-bottom: env(safe-area-inset-bottom); }
         
         input, select, textarea { outline: none; background: transparent; }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
@@ -70,15 +39,14 @@
         .swipe-item::-webkit-scrollbar { display: none; } 
         .swipe-content { min-width: 100%; scroll-snap-align: start; }
         .swipe-action { min-width: 80px; scroll-snap-align: end; }
-
         .route-connector { position: relative; margin-left: 28px; padding-left: 20px; border-left: 2px dashed #CAD2C5; padding-top: 12px; padding-bottom: 12px; }
         
-        #loading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; items-center; background: #F4F7F5; z-index: 9999; color: #52796F; transition: opacity 0.3s; }
+        #loading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; items-center; background: #F4F7F5; z-index: 9999; color: #52796F; transition: opacity 0.3s; pointer-events: none;}
     </style>
 </head>
 <body class="safe-top h-screen flex flex-col">
 
-    <!-- 安全載入畫面 -->
+    <!-- Loading -->
     <div id="loading">
         <i class="fa-solid fa-plane fa-bounce text-3xl mb-3"></i>
         <div class="text-xs font-bold tracking-widest uppercase">Tokyo Trip</div>
@@ -99,7 +67,7 @@
             </div>
         </header>
 
-        <!-- 1. 行程表 (Schedule) -->
+        <!-- 1. 行程表 -->
         <div v-if="currentTab === 'schedule'" class="px-5 pb-10">
             <div class="flex items-center justify-between mb-4">
                 <div class="flex overflow-x-auto hide-scrollbar gap-2 w-3/4">
@@ -162,7 +130,7 @@
                 </div>
                 <div class="mt-8 pt-4 border-t border-[#E8ECE9]">
                     <h3 class="text-xs font-bold text-[#84A98C] mb-2 tracking-widest uppercase"> <i class="fa-solid fa-bed mr-1"></i> Tonight's Stay</h3>
-                    <div class="bg-gradient-to-br from-[#2F3E46] to-[#354F52] text-white p-5 rounded-2xl relative shadow-lg">
+                    <div class="hotel-card p-5 rounded-2xl relative">
                         <div class="flex items-start gap-3">
                             <div class="mt-1"><i class="fa-solid fa-hotel text-[#84A98C]"></i></div>
                             <div class="flex-1 min-w-0">
@@ -185,7 +153,7 @@
             </div>
         </div>
 
-        <!-- 2. 清單 (List) -->
+        <!-- 2. 清單 -->
         <div v-if="currentTab === 'list'" class="px-5 pt-2 animate-fade">
             <div class="flex p-1 bg-white rounded-xl border border-[#E8ECE9] mb-4">
                 <button @click="listType = 'buy'" :class="listType === 'buy' ? 'bg-[#2F3E46] text-white shadow-md' : 'text-[#84A98C]'" class="flex-1 py-2 rounded-lg text-xs font-bold transition-all"><i class="fa-solid fa-bag-shopping mr-1"></i> 購物</button>
@@ -270,7 +238,7 @@
             </div>
         </div>
 
-        <!-- 3. 匯率 (Currency) -->
+        <!-- 3. 匯率 -->
         <div v-if="currentTab === 'currency'" class="px-5 pt-10">
             <div class="green-card p-6 rounded-3xl mb-6 text-center bg-white shadow-xl shadow-[#52796F]/10">
                 <div class="text-[10px] tracking-widest text-[#84A98C] uppercase mb-1">Exchange Rate</div>
@@ -287,7 +255,7 @@
                 <div class="space-y-4">
                     <div class="flex gap-2">
                         <div class="flex-1">
-                            <label class="text-[10px] text-[#CAD2C5] uppercase block mb-1">JPY (日幣)</label>
+                            <label class="text-[10px] text-[#CAD2C5] uppercase block mb-1">JPY</label>
                             <input type="number" v-model="jpyAmount" class="w-full bg-[#F4F7F5] rounded-xl py-3 text-center text-xl font-bold text-[#2F3E46]" placeholder="0">
                         </div>
                         <div class="flex-1">
@@ -328,7 +296,7 @@
             </div>
         </div>
 
-        <!-- 4. 分帳 (Split) -->
+        <!-- 4. 分帳 -->
         <div v-if="currentTab === 'split'" class="px-5 pt-2">
             <div class="bg-[#2F3E46] text-white p-6 rounded-2xl mb-6 shadow-xl relative overflow-hidden">
                 <div class="absolute -top-10 -right-10 w-32 h-32 bg-[#52796F] rounded-full opacity-20 blur-2xl"></div>
@@ -390,14 +358,26 @@
             </button>
         </nav>
 
-        <!-- 設定 Modal (資料轉移) -->
+        <!-- 設定 Modal -->
         <div v-if="showSettings" class="modal-overlay" @click.self="showSettings = false">
             <div class="bg-white w-full max-w-sm rounded-2xl p-6 shadow-2xl relative animate-fade">
                 <button @click="showSettings = false" class="absolute top-4 right-4 text-[#CAD2C5]"><i class="fa-solid fa-times text-xl"></i></button>
-                <h3 class="text-xl font-bold text-[#2F3E46] mb-4">設定 (V16)</h3>
+                <h3 class="text-xl font-bold text-[#2F3E46] mb-4">設定</h3>
                 
+                <!-- 手動備份區 -->
+                <div class="bg-[#F4F7F5] p-4 rounded-xl mb-4">
+                    <h4 class="text-sm font-bold text-[#52796F] mb-2"><i class="fa-solid fa-floppy-disk mr-1"></i> 手動備份 (推薦)</h4>
+                    <p class="text-[10px] text-[#84A98C] mb-3">擔心資料遺失？請隨時按下備份。下次卡住時，點擊下方「讀取備份」即可還原。</p>
+                    <button @click="saveManualBackup" class="w-full bg-[#52796F] text-white py-2 rounded-lg text-xs font-bold mb-2 active:scale-95 transition">
+                        💾 建立目前備份
+                    </button>
+                    <button @click="loadManualBackup" class="w-full bg-white border border-[#52796F] text-[#52796F] py-2 rounded-lg text-xs font-bold active:scale-95 transition">
+                        📂 讀取備份
+                    </button>
+                </div>
+
                 <div class="bg-[#F4F7F5] p-4 rounded-xl mb-6">
-                    <h4 class="text-sm font-bold text-[#52796F] mb-2"><i class="fa-solid fa-share-nodes mr-1"></i> 資料轉移 (不含匯率紀錄)</h4>
+                    <h4 class="text-sm font-bold text-[#52796F] mb-2"><i class="fa-solid fa-share-nodes mr-1"></i> 資料轉移 (給朋友)</h4>
                     <button @click="exportData" class="w-full bg-[#2F3E46] text-white py-3 rounded-lg text-xs font-bold mb-2"><i class="fa-solid fa-copy mr-1"></i> 複製資料代碼</button>
                     <div class="flex gap-2">
                         <input v-model="importString" placeholder="貼上代碼..." class="flex-1 bg-white px-3 py-2 rounded-lg text-xs text-[#2F3E46] border border-[#E8ECE9]">
@@ -556,7 +536,7 @@
                         const rawRate = data.rates.TWD;
                         rate.value = (rawRate * 1.02).toFixed(3);
                         lastUpdated.value = new Date().toLocaleTimeString('zh-TW', {hour: '2-digit', minute:'2-digit'});
-                    } catch (e) { alert('更新失敗'); } finally { isLoadingRate.value = false; }
+                    } catch (e) { alert('更新失敗，請檢查網路'); } finally { isLoadingRate.value = false; }
                 };
 
                 const addHistory = () => {
@@ -589,28 +569,34 @@
                     return Math.round(paid - (totalExpense.value / travelers.value.length));
                 };
 
+                // Storage & Migration Logic
                 onMounted(() => {
-                    // 強制啟動機制：1秒後無論如何都要顯示 App
+                    // Safety: Force show after 0.5s no matter what
                     setTimeout(() => {
-                        document.getElementById('loading').style.display = 'none';
-                        document.getElementById('app').classList.remove('hidden');
+                        const loader = document.getElementById('loading');
+                        if(loader) loader.style.display = 'none';
+                        const app = document.getElementById('app');
+                        if(app) app.classList.remove('hidden');
                         nextTick(() => initSortable());
-                    }, 1000);
+                    }, 500);
 
-                    // 資料載入與繼承邏輯
-                    const keyCurrent = 'tokyoTripApp'; // 正式版 Key
+                    // Try loading data
+                    const keyCurrent = 'tokyoTripV17';
                     const savedData = localStorage.getItem(keyCurrent);
                     
                     if (savedData) {
                         loadData(JSON.parse(savedData));
                     } else {
-                        // 繼承順序: V15 -> V14 -> V13 -> V12
-                        const legacyKeys = ['tokyoTripV15', 'tokyoTripV14', 'tokyoTripV13', 'tokyoTripV12'];
-                        for (const key of legacyKeys) {
-                            const oldData = localStorage.getItem(key);
-                            if (oldData) {
-                                loadData(JSON.parse(oldData));
-                                break; 
+                        // Manual Backup Check
+                        const manual = localStorage.getItem('tokyoTrip_ManualBackup');
+                        if(manual) {
+                            loadData(JSON.parse(manual));
+                        } else {
+                            // Legacy Check
+                            const legacyKeys = ['tokyoTripV16', 'tokyoTripV15', 'tokyoTripV14', 'tokyoTripV13'];
+                            for (const key of legacyKeys) {
+                                const old = localStorage.getItem(key);
+                                if (old) { loadData(JSON.parse(old)); break; }
                             }
                         }
                     }
@@ -629,9 +615,36 @@
                     } catch(e) {}
                 };
 
+                // Manual Backup Feature
+                const saveManualBackup = () => {
+                    const data = {
+                        itinerary: itinerary.value, wishlist: wishlist.value,
+                        rate: rate.value, expenses: expenses.value, 
+                        travelerInput: travelerInput.value, lastUpdated: lastUpdated.value,
+                        currencyHistory: currencyHistory.value, savedMapUrl: savedMapUrl.value
+                    };
+                    try {
+                        localStorage.setItem('tokyoTrip_ManualBackup', JSON.stringify(data));
+                        alert('備份成功！下次若資料遺失，請按「讀取備份」。');
+                    } catch(e) { alert('備份失敗：空間不足'); }
+                };
+
+                const loadManualBackup = () => {
+                    const backup = localStorage.getItem('tokyoTrip_ManualBackup');
+                    if(backup) {
+                        if(confirm('確定要還原到上次手動備份的狀態嗎？')) {
+                            loadData(JSON.parse(backup));
+                            alert('還原成功！');
+                            nextTick(() => initSortable());
+                        }
+                    } else {
+                        alert('找不到備份檔案，請先執行「建立備份」。');
+                    }
+                };
+
                 watch([itinerary, wishlist, rate, expenses, travelerInput, lastUpdated, currencyHistory, savedMapUrl], () => {
                     try {
-                        localStorage.setItem('tokyoTripApp', JSON.stringify({
+                        localStorage.setItem('tokyoTripV17', JSON.stringify({
                             itinerary: itinerary.value, wishlist: wishlist.value,
                             rate: rate.value, expenses: expenses.value, 
                             travelerInput: travelerInput.value, lastUpdated: lastUpdated.value,
@@ -640,7 +653,7 @@
                     } catch (e) { alert('儲存空間已滿，請刪除部分照片'); }
                 }, { deep: true });
 
-                const resetData = () => { if(confirm('警告：刪除所有資料！')) { localStorage.removeItem('tokyoTripApp'); location.reload(); } }
+                const resetData = () => { if(confirm('警告：刪除所有資料！')) { localStorage.removeItem('tokyoTripV17'); location.reload(); } }
 
                 const exportData = () => {
                     const data = JSON.stringify({
@@ -677,7 +690,7 @@
                     showUncheckedOnly, savedMapUrl, tempMapUrl, isEditingMap, saveMapUrl,
                     rate, jpyAmount, fetchRate, isLoadingRate, lastUpdated, historyNote, currencyHistory, addHistory, deleteHistory,
                     travelerInput, travelers, expenses, newExpense, addExpense, totalExpense, getBalance, updateTravelers, 
-                    resetData, exportData, importData
+                    resetData, exportData, importData, saveManualBackup, loadManualBackup
                 };
             }
         });
