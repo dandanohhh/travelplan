@@ -31,10 +31,20 @@
             color: var(--primary);
             padding-bottom: 120px;
             -webkit-tap-highlight-color: transparent;
+            /* 預設禁止選取，防止拖拉時整頁變藍 */
             user-select: none;
+            -webkit-user-select: none;
         }
         .safe-top { padding-top: max(20px, env(safe-area-inset-top)); }
         
+        /* === V38 重點修復：強制允許輸入框選取與貼上 === */
+        input, textarea, select {
+            user-select: text !important;
+            -webkit-user-select: text !important;
+            outline: none; 
+            background: transparent;
+        }
+
         /* 卡片樣式 */
         .ppg-card {
             background-color: white;
@@ -71,7 +81,6 @@
             box-shadow: 0 -4px 10px rgba(0,0,0,0.05);
         }
         
-        input, select { outline: none; background: transparent; }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .file-input { position: absolute; width: 100%; height: 100%; opacity: 0; cursor: pointer; z-index: 10; left: 0; top: 0;}
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 100; display: flex; justify-content: center; items-center; padding: 20px; }
@@ -80,6 +89,7 @@
         .swipe-action { min-width: 80px; scroll-snap-align: end; }
         .route-connector { position: relative; margin-left: 28px; padding-left: 20px; border-left: 3px dashed #FFCDD2; padding-top: 12px; padding-bottom: 12px; }
         
+        /* 修復 Emoji 切到 */
         select { padding-right: 0 !important; text-align-last: center; }
         
         [v-cloak] { display: none; }
@@ -152,8 +162,8 @@
                                 </div>
                             </div>
                             <div class="flex-1 pt-1 min-w-0 pr-10">
-                                <input type="text" v-model="event.location" placeholder="地點" class="w-full text-lg font-bold text-[#333] mb-1 placeholder-[#FFCDD2]">
-                                <input type="text" v-model="event.note" placeholder="備註..." class="w-full text-xs text-[#FF4081] mb-3 opacity-80 placeholder-[#FFCDD2]">
+                                <input type="text" v-model="event.location" placeholder="地點 (可貼上)" class="w-full text-lg font-bold text-[#333] mb-1 placeholder-[#FFCDD2]">
+                                <input type="text" v-model="event.note" placeholder="備註 (可貼上)..." class="w-full text-xs text-[#FF4081] mb-3 opacity-80 placeholder-[#FFCDD2]">
                                 <div class="flex items-center gap-3">
                                     <a :href="getMapLink(event.location)" target="_blank" class="inline-flex items-center text-[10px] font-bold text-white bg-[#00BCD4] px-3 py-1.5 rounded-full shadow-md">
                                         <i class="fa-solid fa-location-arrow mr-1.5"></i> 導航
@@ -187,7 +197,6 @@
                 <div class="mt-10 pt-6 border-t-2 border-[#FFCDD2]">
                     <div class="flex justify-between items-center mb-3">
                          <h3 class="text-[10px] font-bold text-[#FF4081] tracking-widest uppercase pl-1">Tonight's Stay</h3>
-                         <!-- 複製功能: 只有 Day 2 (index 1) 以後才會出現 -->
                          <button v-if="currentDayIndex > 0" @click="copyFromPreviousDay" class="text-[10px] bg-[#FF4081] text-white px-3 py-1 rounded-full shadow-sm hover:bg-[#F50057] transition font-bold">
                              <i class="fa-solid fa-copy mr-1"></i> 同前一晚
                          </button>
@@ -292,6 +301,7 @@
                 <div class="text-[10px] tracking-[0.2em] text-[#FF80AB] uppercase mb-2 font-bold">Real-time Rate</div>
                 <div class="flex justify-center items-end gap-3 mb-3 pb-6 border-b-2 border-[#FFF0F5]">
                     <span class="text-sm text-[#FF4081] font-bold">¥1 =</span>
+                    <!-- 寬度調整 -->
                     <input type="number" step="0.001" v-model="rate" class="w-32 text-center text-3xl font-black text-[#333] border-b-2 border-[#FFCDD2]">
                     <span class="text-sm text-[#FF4081] font-bold">TWD</span>
                     <button @click="fetchRate" class="ml-2 w-9 h-9 rounded-full bg-[#E0F7FA] text-[#00BCD4] flex items-center justify-center active:bg-cyan-100"><i class="fa-solid fa-arrows-rotate" :class="{'spin': isLoadingRate}"></i></button>
@@ -369,15 +379,14 @@
 
         <div v-if="showSettings" class="modal-overlay" @click.self="showSettings = false">
             <div class="bg-white w-full max-w-sm rounded-3xl p-8 shadow-2xl border-4 border-[#FFCDD2] animate-fade relative">
-                <!-- 修正設定關閉 -->
                 <button @click="showSettings = false" class="absolute top-4 right-4 text-[#FFCDD2] hover:text-[#FF4081] p-2 text-2xl z-50"><i class="fa-solid fa-times"></i></button>
                 <h3 class="text-xl font-black text-[#FF4081] mb-6">設定</h3>
                 <div class="mb-6"><label class="text-xs font-bold text-[#FF4081] block mb-2">出發日</label><input type="date" v-model="startDate" class="w-full bg-[#FFF0F5] p-3 rounded-xl font-bold border-2 border-[#FFCDD2]"></div>
                 <div class="bg-[#FFF0F5] p-5 rounded-2xl mb-4 border-2 border-[#FFCDD2]">
                     <h4 class="text-sm font-bold text-[#FF4081] mb-3">備份</h4>
-                    <button @click="saveManualBackup" class="w-full bg-[#FF4081] text-white py-3 rounded-xl text-xs font-bold mb-3 shadow-md">💾 備份</button>
-                    <button @click="loadManualBackup" class="w-full bg-white border-2 border-[#FF4081] text-[#FF4081] py-3 rounded-xl text-xs font-bold mb-3">📂 還原</button>
-                    <!-- 分享功能回歸 -->
+                    <button @click="saveManualBackup" class="w-full bg-[#FF4081] text-white py-3 rounded-xl text-xs font-bold mb-3 shadow-md">💾 建立備份</button>
+                    <button @click="loadManualBackup" class="w-full bg-white border-2 border-[#FF4081] text-[#FF4081] py-3 rounded-xl text-xs font-bold mb-3">📂 還原備份</button>
+                    <!-- 分享功能 -->
                     <button @click="exportData" class="w-full bg-[#4DD0E1] text-white py-3 rounded-xl text-xs font-bold mb-2 shadow-md">📤 產生分享代碼</button>
                     <div class="flex gap-2">
                          <input v-model="importString" placeholder="貼上代碼..." class="flex-1 bg-white px-3 py-2 rounded-lg text-xs text-[#333] border border-[#FFCDD2]">
@@ -571,10 +580,10 @@
 
                 const saveManualBackup = () => { const data = { itinerary: itinerary.value, wishlist: wishlist.value, rate: rate.value, expenses: expenses.value, travelerInput: travelerInput.value, lastUpdated: lastUpdated.value, currencyHistory: currencyHistory.value, savedMapUrl: savedMapUrl.value, startDate: startDate.value }; try { localStorage.setItem('tokyoTrip_ManualBackup', JSON.stringify(data)); alert('備份成功'); } catch(e) { alert('備份失敗(空間不足)'); } };
                 const loadManualBackup = () => { const backup = localStorage.getItem('tokyoTrip_ManualBackup'); if(backup && confirm('還原備份？')) { const data = JSON.parse(backup); itinerary.value = data.itinerary; wishlist.value = data.wishlist; rate.value = data.rate; expenses.value = data.expenses; travelerInput.value = data.travelerInput; lastUpdated.value = data.lastUpdated; currencyHistory.value = data.currencyHistory; savedMapUrl.value = data.savedMapUrl; startDate.value = data.startDate; alert('成功'); nextTick(() => initSortable()); } else if(!backup) { alert('無備份'); } };
-                const resetData = () => { if(confirm('警告：刪除所有資料！')) { localStorage.removeItem('tokyoTrip_V37_PPG'); location.reload(); } };
+                const resetData = () => { if(confirm('警告：刪除所有資料！')) { localStorage.removeItem('tokyoTrip_V38_Final'); location.reload(); } };
 
                 const recoverOldData = () => {
-                    const legacyKeys = ['tokyoTrip_PPG_V33', 'tokyoTrip_PPG_V32', 'tokyoTrip_PPG_V30', 'tokyoTrip_V24_Direct'];
+                    const legacyKeys = ['tokyoTrip_V37_PPG', 'tokyoTrip_PPG_V33', 'tokyoTrip_PPG_V32', 'tokyoTrip_PPG_V30', 'tokyoTrip_V24_Direct'];
                     let found = false;
                     for (const key of legacyKeys) {
                         const old = localStorage.getItem(key);
@@ -607,7 +616,7 @@
                     } catch (e) { alert('代碼錯誤'); }
                 };
 
-                const KEY = 'tokyoTrip_V37_PPG';
+                const KEY = 'tokyoTrip_V38_Final';
                 onMounted(() => {
                     document.getElementById('app').classList.remove('hidden');
                     const saved = localStorage.getItem(KEY);
@@ -621,7 +630,7 @@
                 });
 
                 watch([itinerary, wishlist, rate, expenses, travelerInput, lastUpdated, currencyHistory, savedMapUrl, startDate], () => {
-                    try { localStorage.setItem(KEY, JSON.stringify({ itinerary: itinerary.value, wishlist: wishlist.value, rate: rate.value, expenses: expenses.value, travelerInput: travelerInput.value, lastUpdated: lastUpdated.value, currencyHistory: currencyHistory.value, savedMapUrl: savedMapUrl.value, startDate: startDate.value })); } catch(e) {}
+                    try { localStorage.setItem(KEY, JSON.stringify({ itinerary: itinerary.value, wishlist: wishlist.value, rate: rate.value, expenses: expenses.value, travelerInput: travelerInput.value, lastUpdated: lastUpdated.value, currencyHistory: currencyHistory.value, savedMapUrl: savedMapUrl.value, startDate: startDate.value })); } catch (e) {}
                 }, { deep: true });
 
                 return {
